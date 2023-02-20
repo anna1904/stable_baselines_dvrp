@@ -26,15 +26,50 @@ def mask_fn(env: gym.Env) -> np.ndarray:
 env = gym.make("DVRPEnv-v0")
 env = ActionMasker(env, mask_fn)  # Wrap to enable masking
 
-model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=1, tensorboard_log="./a2c_cartpole_tensorboard/")
-model.learn(total_timesteps=1000000, log_interval=4)
-model.save("dvrp_v0")
+# path = "./a2c_cartpole_tensorboard/"
+# model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=1, tensorboard_log=path)
+# model.learn(total_timesteps=10000000, log_interval=100) #removed 2 0
+# model.save("dvrp_v7")
+
+#dvrp_v5 basic with time windows and order time in state
+#dvrp_v6 I have added this missed reward for missed order
+#dvrp_v7 I will give reward 1 for rejection
+
+#
+model = MaskablePPO.load("dvrp_v7", env = env)
+obs = env.reset()
+#
+#
+for i in range(480):
+    action_masks = mask_fn(env)
+    action, _states = model.predict(obs, action_masks=action_masks)
+    # if (action == 0):
+    #     print("QQQQQ")
+    obs, rewards, dones, info = env.step(action)
+    env.render()
+
+print('__________________')
 
 obs = env.reset()
-
-for i in range(10):
-    action, _states = model.predict(obs)
+for i in range(480):
+    action_masks = mask_fn(env)
+    action, _states = model.predict(obs, action_masks=action_masks)
+    # if (action == 0):
+    #     print("QQQQQ")
     obs, rewards, dones, info = env.step(action)
+    env.render()
+print('__________________')
+
+obs = env.reset()
+for i in range(480):
+    action_masks = mask_fn(env)
+    action, _states = model.predict(obs, action_masks=action_masks)
+    # if (action == 0):
+    #     print("QQQQQ")
+    obs, rewards, dones, info = env.step(action)
+    env.render()
+print('__________________')
+
 
 
 

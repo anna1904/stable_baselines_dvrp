@@ -31,12 +31,12 @@ class DVRPEnv(gym.Env):
     def __init__(self, episode_limit=100,  grid_shape=(10, 10), env_config={}):
         config_defaults = {
                            'n_orders': 5,
-                           'order_prob': 0.5,
-                           'driver_capacity': 4,
+                           'order_prob': 0.3,
+                           'driver_capacity': 5,
                             'map_quad': (10, 10),
                            'order_promise': 60,
                            'order_timeout_prob': 0.15,
-                           'episode_length': 1000,
+                           'episode_length': 480,
                            'num_zones': 4,
                            'order_probs_per_zone': (0.1, 0.5, 0.3, 0.1),
                            'order_reward_min': (8, 5, 2, 1),
@@ -105,7 +105,9 @@ class DVRPEnv(gym.Env):
         self._successful_delivery = 0
         self._total_accepted_orders = 0
         self._total_delivered_orders = 0
+        self._total_delivered_orders_zone = [0,0,0,0]
         self._total_rejected_orders = 0
+        self._total_depot_visits = 0
 
         # Limits for observation space variables
         self.vehicle_x_min = 0
@@ -139,20 +141,38 @@ class DVRPEnv(gym.Env):
         self.acceptance_decision = 0
         # Create observation space
         # [self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.dr_left_capacity + self.time
+
+        # time elapsed since the order has been placed
+        o_time_min = [0] * self.n_orders
+        o_time_max = [self.order_promise] * self.n_orders
+
+        reward_per_order_min = [0] * self.n_orders
+        reward_per_order_max = [max(self.order_reward_max)] * self.n_orders
+
+        #missed order
+        self.missed_order_reward = 0
+
+
         self._obs_high = np.array([self.vehicle_x_max, self.vehicle_y_max] +
                                  [self.vehicle_x_max] * self.n_orders +
                                   [self.vehicle_y_max] * self.n_orders+
                                   [2] * self.n_orders +
+                                  o_time_max+
                                   [self.driver_capacity] +
                                   [self.clock_max]
-                                  + [1])
+                                  + [1] +
+                                  reward_per_order_max
+                                  + [12])
 
         self._obs_low = np.array([self.vehicle_x_min, self.vehicle_y_min] +
                                   [self.vehicle_x_min] * self.n_orders +
                                   [self.vehicle_y_min] * self.n_orders +
                                   [0] * self.n_orders +
+                                  o_time_min +
                                   [0] +
                                   [0]+
+                                  [0] +
+                                  reward_per_order_min +
                                   [0])
                                  # [self.vehicle_x_min, self.vehicle_y_max] #the last is the location to which agent is moving
                                  
@@ -165,16 +185,13 @@ class DVRPEnv(gym.Env):
     def step(self, action):
         orig_obs, rew, done, info = self.__orig_step(action)
         # self.__update_avail_actions()
-        self.update_acceptance_decision()
+        # self.update_acceptance_decision()
         obs = {
             "action_mask": np.array([1]*3 + [1]*self.n_orders),
             "real_obs": orig_obs,
         }
         return orig_obs, rew, done, info
 
-    def update_acceptance_decision(self):
-        if self.o_status.count(1) == 1:
-            self.acceptance_decision == 0
 
     def __orig_step(self, action):
         done = False
@@ -192,9 +209,11 @@ class DVRPEnv(gym.Env):
         elif action == 1:  # Accept an order
             action_type = 'accept'
             relevant_order_index = self.current_order_id
-        elif action == 2:  # Accept an order
+            self._total_accepted_orders += 1
+        elif action == 2:  # Reject# an order
             action_type = 'reject'
             relevant_order_index = self.current_order_id
+            self._total_rejected_orders += 1
         elif action == 3:  # Return to a depot
             action_type = 'depot'
             b = [self.depot_location[0], self.depot_location[1]]
@@ -235,7 +254,8 @@ class DVRPEnv(gym.Env):
             # if order accept it
             if self.o_status[relevant_order_index] == 1:
                 self.o_status[relevant_order_index] = 0
-                self.reward -= self.reward_per_order[relevant_order_index] / 6  # Give some reward for rejecting
+                self.reward += 1  # Give some reward for rejecting
+                self.__reset_order(relevant_order_index)
 
         elif action_type == 'deliver':
             self.__update_dr_xy(translated_action)
@@ -244,22 +264,35 @@ class DVRPEnv(gym.Env):
                 # If order is available and driver is at delivery location, deliver the order
                 if self.o_status[o] == 2 and (self.dr_x == self.o_x[o] and self.dr_y == self.o_y[o]):
                     if self.dr_left_capacity >= 1:
+                        self._total_delivered_orders += 1
+                        self._update_statistics(self.o_x[o])
                         self.o_delivered[o] = 1
                         if self.o_time[o] <= self.order_promise:
-                            self.reward += self.reward_per_order[o] / 3  # Rest of the reward was given in accept and deliver
+                            self.reward += 2*self.reward_per_order[o] / 3  # Rest of the reward was given in accept and deliver
                         self.dr_left_capacity -= 1
                         self.__reset_order(o)
                     else:
-                        self.reward -= self.reward_per_order[o] / 3
+                        self.reward -= self.reward_per_order[o] / 6
         elif action_type == 'depot':
             if (self.dr_x == self.depot_location[0] and self.dr_y == self.depot_location[1]):
                 self.dr_left_capacity = self.driver_capacity
+                self._total_depot_visits += 1
             self.__update_dr_xy(translated_action)
 
         else:
             raise Exception(
                 'Misaligned action space and driver update function: {}, {}, {}'.format(action_type, translated_action,
                                                                                         relevant_order_index))
+    def _update_statistics(self, x):
+        if x in {0,1,2}:
+            self._total_delivered_orders_zone[0] +=1
+        elif x in {3,4,5}:
+            self._total_delivered_orders_zone[1] += 1
+        elif x in {6,7}:
+            self._total_delivered_orders_zone[2] += 1
+        else:
+            self._total_delivered_orders_zone[3] += 1
+
 
     def __reset_order(self, order_num):
         self.o_status[order_num] = 0
@@ -267,16 +300,33 @@ class DVRPEnv(gym.Env):
         self.o_res_map[order_num] = -1
         self.o_x[order_num] = 0
         self.o_y[order_num] = 0
+        self.o_delivered[order_num] = 0
         self.reward_per_order[order_num] = 0
 
     def __update_environment_parameters(self):
         # Update the waiting times
+        for o in range(self.n_orders):
+            # if this is an active order, increase the waiting time
+            if self.o_status[o] >= 1:
+                self.o_time[o] += 1
+        for o in range(self.n_orders):
+            if self.o_time[o] >= self.order_promise:
+                if self.o_status[o] >= 2:
+                    self.reward = (self.reward
+                                   - self.order_miss_penalty
+                                   - self.reward_per_order[o] * (self.o_status[o] == 2) / 3
+                                   - self.reward_per_order[o] * (self.o_status[o] == 3) * 2 / 3)
+                self.__reset_order(o)
 
-        # Create new orders
+
+        self.acceptance_decision = 0
+        # Create new orders (changed to create new order)
+        self.missed_order_reward = 0
         for o in range(self.n_orders):
             if self.o_status[o] == 0:
                 # Flip a coin to create an order
                 if np.random.random(1)[0] < self.order_prob:
+                    self.current_order_id = o
                     # Choose a zone
                     zone = np.random.choice(self.num_zones, p=self.order_probs_per_zone)
                     o_x, o_y, order_reward = self.__receive_order(zone)
@@ -285,6 +335,15 @@ class DVRPEnv(gym.Env):
                     self.o_x[o] = o_x
                     self.o_y[o] = o_y
                     self.reward_per_order[o] = order_reward
+                    self.acceptance_decision = 1
+                break
+            #generate missed order
+        if self.o_status.count(2) == self.n_orders:
+            if np.random.random(1)[0] < self.order_prob:
+                zone = np.random.choice(self.num_zones, p=self.order_probs_per_zone)
+                o_x, o_y, order_reward = self.__receive_order(zone)
+                self.missed_order_reward = order_reward
+                self.reward -= self.missed_order_reward
 
     def __receive_order(self, zone):
         i = 0  # prevent infinite loop
@@ -313,19 +372,20 @@ class DVRPEnv(gym.Env):
 
     def __create_state(self):
 
-        return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + [self.clock] +
-                          [self.dr_left_capacity] +[self.acceptance_decision])
+        return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.o_time +
+                          [self.dr_left_capacity] + [self.clock] +[self.acceptance_decision] + self.reward_per_order + [self.missed_order_reward])
 
     def valid_action_mask(self):
         avail_actions = np.array([0] * self.action_max)
-        avail_actions[0] = 1
-        avail_actions[3] = 1
         if (self.acceptance_decision == 1):
+            avail_actions[0] = 0
             avail_actions[1:2] = 1
         else:
+            avail_actions[0] = 1
+            avail_actions[3] = 1
             for i, status in enumerate(self.o_status):
                 if status == 2: #accepted
-                    avail_actions[i] = 1
+                    avail_actions[i+4] = 1
         return avail_actions
 
     def get_total_actions(self):
@@ -354,6 +414,13 @@ class DVRPEnv(gym.Env):
         self.acceptance_decision = 0
         self.images = [self._base_img]
 
+        self._total_accepted_orders = 0
+        self._total_delivered_orders = 0
+        self._total_delivered_orders_zone = [0, 0, 0, 0]
+        self._total_rejected_orders = 0
+        self._total_depot_visits = 0
+        self.missed_order_reward = 0
+
         return self.__create_state()
 
     def __generate_order(self):
@@ -381,7 +448,7 @@ class DVRPEnv(gym.Env):
             else:
                 if self.o_delivered[idx] == 1:
                     fill_cell_im(img, self.icon_delivered, [self.o_x[idx], self.o_y[idx]], cell_size=CELL_SIZE)
-        img.show()
+        # img.show()
 
         self.images.append(img)
         img = np.asarray(img)
@@ -391,6 +458,11 @@ class DVRPEnv(gym.Env):
             self.viewer = rendering.SimpleImageViewer()
         self.viewer.imshow(img)
         # return self.viewer.render(return_rgb_array = mode=='rgb_array')
+        print('total_accepted_order == ', self._total_accepted_orders)
+        print('total_rejected_orders == ', self._total_rejected_orders)
+        print('total_delivered_orders == ', self._total_delivered_orders)
+        print('total_delivered_orders_zone == ', self._total_delivered_orders_zone)
+        print('total_depot_visits == ', self._total_depot_visits)
         return self.viewer.isopen
 
     def close(self):
