@@ -159,22 +159,22 @@ class DVRPEnv(gym.Env):
         self._obs_high = np.array([self.vehicle_x_max, self.vehicle_y_max] +
                                  [self.vehicle_x_max] * self.n_orders +
                                   [self.vehicle_y_max] * self.n_orders+
-                                  # [2] * self.n_orders +
+                                  [2] * self.n_orders +
                                   reward_per_order_max +
-                                  o_time_max +
                                   [self.vehicle_x_max, self.vehicle_y_max] +
                                   [max(self.order_reward_max)] +
+                                  o_time_max +
                                   [self.driver_capacity] +
                                   [self.clock_max])
 
         self._obs_low = np.array([self.vehicle_x_min, self.vehicle_y_min] +
                                   [self.vehicle_x_min] * self.n_orders +
                                   [self.vehicle_y_min] * self.n_orders +
-                                  # [0] * self.n_orders +
+                                  [0] * self.n_orders +
                                   reward_per_order_min +
-                                  o_time_min +
                                   [self.vehicle_x_min, self.vehicle_y_min] +
                                   [0] +
+                                  o_time_min +
                                   [0] +
                                   [0]
                                 )
@@ -403,12 +403,12 @@ class DVRPEnv(gym.Env):
                     o_y[i] = 0
                     reward_per_order[i] = 0
 
-            return np.array([self.dr_x] + [self.dr_y] + o_x + o_y + reward_per_order + self.o_time +
+            return np.array([self.dr_x] + [self.dr_y] + o_x + o_y + self.o_status + reward_per_order + self.o_time +
                             [self.received_order_x, self.received_order_y] + [self.received_order_reward] +
                              [self.dr_left_capacity] + [self.clock])
         else:
-            return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.reward_per_order + self.o_time +
-                            [self.received_order_x, self.received_order_y] + [self.received_order_reward] +
+            return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order + self.o_time +
+                             [self.received_order_x, self.received_order_y] + [self.received_order_reward] +
                             [self.dr_left_capacity] + [self.clock])
 
 

@@ -23,12 +23,15 @@ from sb3_contrib.common.maskable.policies import MaskableActorCriticPolicy
 #dvrp_v_4 no reward for acceptance, full reward for delivering, n = 5, PPO-7
 #dvrp_v_5 no reward for acceptance, full reward for delivering, without penalty for arriving empty in depot n = 5, PPO-8
 #dvrp_v_6 acceptance order separately, rewards like in v_o n = 5, PPO-9
+# ([self.vehicle_x_max, self.vehicle_y_max] +[self.vehicle_x_max] * self.n_orders +[self.vehicle_y_max] * self.n_orders+
+# [2] * self.n_orders + reward_per_order_max + [self.vehicle_x_max, self.vehicle_y_max] +[max(self.order_reward_max)] +
+# o_time_max + [self.driver_capacity] + [self.clock_max])
 #dvrp_v_7 acceptance order separately,no info about new order inside orders, rewards like in v_o n = 5, PPO-10
 # [self.dr_x] + [self.dr_y] + o_x + o_y + reward_per_order + self.o_time +
 #                             [self.received_order_x, self.received_order_y] + [self.received_order_reward] +
 #                              [self.dr_left_capacity] + [self.clock]
 
-
+#dvrp_v_8 acceptance order separately,no info about new order inside orders, except  o_statuses, PPO-11
 from stable_baselines3 import PPO
 # from stable_baselines3.common.evaluation import evaluate_policy
 
@@ -52,7 +55,7 @@ env = ActionMasker(env, mask_fn)  # Wrap to enable masking
 path = "./a2c_cartpole_tensorboard/"
 model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=1, tensorboard_log=path)
 model.learn(total_timesteps=60000000, log_interval=100) #6 deleted
-model.save("dvrp_v_7")
+model.save("dvrp_v_8")
 
 
 # #
