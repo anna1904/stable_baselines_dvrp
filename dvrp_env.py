@@ -161,8 +161,8 @@ class DVRPEnv(gym.Env):
                                   [self.vehicle_y_max] * self.n_orders+
                                   [2] * self.n_orders +
                                   reward_per_order_max +
-                                  [self.vehicle_x_max, self.vehicle_y_max] +
-                                  [max(self.order_reward_max)] +
+                                  # [self.vehicle_x_max, self.vehicle_y_max] +
+                                  # [max(self.order_reward_max)] +
                                   o_time_max +
                                   [self.driver_capacity] +
                                   [self.clock_max])
@@ -172,8 +172,8 @@ class DVRPEnv(gym.Env):
                                   [self.vehicle_y_min] * self.n_orders +
                                   [0] * self.n_orders +
                                   reward_per_order_min +
-                                  [self.vehicle_x_min, self.vehicle_y_min] +
-                                  [0] +
+                                  # [self.vehicle_x_min, self.vehicle_y_min] +
+                                  # [0] +
                                   o_time_min +
                                   [0] +
                                   [0]
@@ -392,23 +392,24 @@ class DVRPEnv(gym.Env):
         # return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order +
         #                 [self.received_order_x, self.received_order_y] + [self.received_order_reward] +
         #                 self.o_time + [self.dr_left_capacity] + [self.clock])
-        if (self.acceptance_decision):
-            o_x = copy.deepcopy(self.o_x)
-            o_y = copy.deepcopy(self.o_y)
-            reward_per_order = copy.deepcopy(self.reward_per_order)
-
-            for i in range(self.n_orders):
-                if self.o_status[i] == 1:
-                    o_x[i] = 0
-                    o_y[i] = 0
-                    reward_per_order[i] = 0
-
-            return np.array([self.dr_x] + [self.dr_y] + o_x + o_y + self.o_status + reward_per_order + self.o_time +
-                            [self.received_order_x, self.received_order_y] + [self.received_order_reward] +
-                             [self.dr_left_capacity] + [self.clock])
-        else:
+        # if (self.acceptance_decision):
+        #     o_x = copy.deepcopy(self.o_x)
+        #     o_y = copy.deepcopy(self.o_y)
+        #     reward_per_order = copy.deepcopy(self.reward_per_order)
+        #
+        #     for i in range(self.n_orders):
+        #         if self.o_status[i] == 1:
+        #             o_x[i] = 0
+        #             o_y[i] = 0
+        #             reward_per_order[i] = 0
+        #
+        #
+        #     return np.array([self.dr_x] + [self.dr_y] + o_x + o_y + self.o_status + reward_per_order + self.o_time +
+        #                     [self.received_order_x, self.received_order_y] + [self.received_order_reward] +
+        #                      [self.dr_left_capacity] + [self.clock])
+        # else:
             return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order + self.o_time +
-                             [self.received_order_x, self.received_order_y] + [self.received_order_reward] +
+                             # [self.received_order_x, self.received_order_y] + [self.received_order_reward] +
                             [self.dr_left_capacity] + [self.clock])
 
 
