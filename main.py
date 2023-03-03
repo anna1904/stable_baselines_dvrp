@@ -35,7 +35,22 @@ from sb3_contrib.common.maskable.policies import MaskableActorCriticPolicy
 from stable_baselines3 import PPO
 # from stable_baselines3.common.evaluation import evaluate_policy
 
-#
+#dvrp_v_9 the same just fix with o_time in position, PPO-12 time after new order, dvrp_10, PPO13 time before new order,  !!!commit dvrp_9(baseline) is different from the model
+
+#dvrp_11 2 regions with large reward far away, decrease frequence for this region, PPO14
+
+
+
+
+
+#remove locations
+#give 2 regions with large reward far away
+#image#
+#give zone also
+#large reward order are not often there
+#fquency (increase)
+#give distance how far away from the closest
+
 register(
     id='DVRPEnv-v0',
     entry_point='dvrp_env:DVRPEnv', #your_env_folder.envs:NameOfYourEnv
@@ -55,7 +70,7 @@ env = ActionMasker(env, mask_fn)  # Wrap to enable masking
 path = "./a2c_cartpole_tensorboard/"
 model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=1, tensorboard_log=path)
 model.learn(total_timesteps=60000000, log_interval=100) #6 deleted
-model.save("dvrp_v_8")
+model.save("dvrp_11")
 
 
 # #
