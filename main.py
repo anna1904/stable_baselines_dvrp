@@ -37,9 +37,10 @@ from stable_baselines3 import PPO
 
 #dvrp_v_9 the same just fix with o_time in position, PPO-12 time after new order, dvrp_10, PPO13 time before new order,  !!!commit dvrp_9(baseline) is different from the model
 
-#dvrp_11 2 regions with large reward far away, decrease frequence for this region, PPO14
-
-
+#dvrp_11 (replaced with no orders) 2 regions with large reward far away, decrease frequence for this region, PPO14
+#above the same but 2 time longer (150000000) sc_1_a : PPO16, batch_size=128, learning_rate=0.0004, 19:01:37
+#sc_1_b without locations PPO17
+#sc_1_c with locations and with zones PPO18
 
 
 
@@ -50,6 +51,7 @@ from stable_baselines3 import PPO
 #large reward order are not often there
 #fquency (increase)
 #give distance how far away from the closest
+#normalize whatever
 
 register(
     id='DVRPEnv-v0',
@@ -68,9 +70,9 @@ t2 = numpy.random.get_state()
 env = ActionMasker(env, mask_fn)  # Wrap to enable masking
 
 path = "./a2c_cartpole_tensorboard/"
-model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=1, tensorboard_log=path)
-model.learn(total_timesteps=60000000, log_interval=100) #6 deleted
-model.save("dvrp_11")
+model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=1, tensorboard_log=path, batch_size=128, learning_rate=0.0004)
+model.learn(total_timesteps=150000000, log_interval=100, progress_bar=True) #6 deleted
+model.save("sc_1_c")
 
 
 # #

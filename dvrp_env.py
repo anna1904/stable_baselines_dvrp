@@ -38,9 +38,9 @@ class DVRPEnv(gym.Env):
                            'order_timeout_prob': 0.15,
                            'episode_length': 480,
                            'num_zones': 4,
-                           'order_probs_per_zone': (0.1, 0.5, 0.3, 0.1),
-                           'order_reward_min': (8, 5, 2, 1),
-                           'order_reward_max': (12, 8, 5, 3),
+                           'order_probs_per_zone': (0.1, 0.4, 0.4, 0.1),
+                           'order_reward_min': (6, 2, 2, 6),
+                           'order_reward_max': (10, 4, 4, 10),
                            'half_norm_scale_reward_per_zone': (0.5, 0.5, 0.5, 0.5),
                            'penalty_per_timestep': 0.1,
                            'penalty_per_move': 0.1,
@@ -135,6 +135,7 @@ class DVRPEnv(gym.Env):
         self.o_y = []
         self.o_status = []
         self.o_delivered = []
+        self.zones_order = []
         #Render parameters
         self.icon_av, _ = draw_image('rsz_1rsz_truck.png')
         self.icon_pkg, _ = draw_image('rsz_1pin.png')
@@ -160,10 +161,9 @@ class DVRPEnv(gym.Env):
                                  [self.vehicle_x_max] * self.n_orders +
                                   [self.vehicle_y_max] * self.n_orders+
                                   [2] * self.n_orders +
+                                  [4] * self.n_orders +
                                   reward_per_order_max +
                                   o_time_max +
-                                  [self.vehicle_x_max, self.vehicle_y_max] +
-                                  [max(self.order_reward_max)] +
                                   [self.driver_capacity] +
                                   [self.clock_max])
 
@@ -171,10 +171,9 @@ class DVRPEnv(gym.Env):
                                   [self.vehicle_x_min] * self.n_orders +
                                   [self.vehicle_y_min] * self.n_orders +
                                   [0] * self.n_orders +
+                                  [0] * self.n_orders +
                                   reward_per_order_min +
                                   o_time_min +
-                                  [self.vehicle_x_min, self.vehicle_y_min] +
-                                  [0] +
                                   [0] +
                                   [0]
                                 )
@@ -347,6 +346,7 @@ class DVRPEnv(gym.Env):
                     self.o_x[o] = o_x
                     self.o_y[o] = o_y
                     self.reward_per_order[o] = order_reward
+                    self.zones_order[o] = zone+1
                     self.acceptance_decision = 1
                 break
             #generate missed order
@@ -388,25 +388,8 @@ class DVRPEnv(gym.Env):
 
     def __create_state(self):
 
-
-        if (self.acceptance_decision):
-            o_x = copy.deepcopy(self.o_x)
-            o_y = copy.deepcopy(self.o_y)
-            reward_per_order = copy.deepcopy(self.reward_per_order)
-
-            for i in range(self.n_orders):
-                if self.o_status[i] == 1:
-                    o_x[i] = 0
-                    o_y[i] = 0
-                    reward_per_order[i] = 0
-
-
-            return np.array([self.dr_x] + [self.dr_y] + o_x + o_y + self.o_status + reward_per_order + self.o_time +
-                            [self.received_order_x, self.received_order_y] + [self.received_order_reward] +
-                             [self.dr_left_capacity] + [self.clock])
-        else:
-            return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order + self.o_time +
-                             [self.received_order_x, self.received_order_y] + [self.received_order_reward] +
+        #
+        return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.zones_order + self.reward_per_order + self.o_time +
                             [self.dr_left_capacity] + [self.clock])
 
 
@@ -443,6 +426,7 @@ class DVRPEnv(gym.Env):
         self.o_y = [0] * self.n_orders
         self.o_status = [0] * self.n_orders
         self.o_delivered = [0] * self.n_orders
+        self.zones_order = [0] * self.n_orders
         self.o_res_map = [-1] * self.n_orders
         self.o_time = [0] * self.n_orders
         self.reward_per_order = [0] * self.n_orders
