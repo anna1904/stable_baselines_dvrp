@@ -42,6 +42,8 @@ from stable_baselines3 import PPO
 #sc_1_b without locations PPO17
 #sc_1_c with locations and with zones PPO18
 
+#sc_2_a order time is not increased for acceptance decision, penalty is given at the end if the order is not delivered.
+
 
 
 #remove locations
@@ -72,17 +74,33 @@ env = ActionMasker(env, mask_fn)  # Wrap to enable masking
 path = "./a2c_cartpole_tensorboard/"
 model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=1, tensorboard_log=path, batch_size=128, learning_rate=0.0004)
 model.learn(total_timesteps=150000000, log_interval=100, progress_bar=True) #6 deleted
-model.save("sc_1_c")
+model.save("sc_2_a")
 
 
-# #
+#
 # torch.set_rng_state(t1)
 # numpy.random.set_state(t2)
-# model = MaskablePPO.load("dvrp_v_2", env = env)
+# model = MaskablePPO.load("sc_1_b", env = env)
+
 # obs = env.reset()
-#
 # total_reward = 0
-# for i in range(700):
+# dones = False
+# while dones == False:
+#     action_masks = mask_fn(env)
+#     action, _states = model.predict(obs, action_masks=action_masks)
+#     # if (action == 0):
+#     #     print("QQQQQ")
+#     obs, rewards, dones, info = env.step(action)
+#     print(rewards)
+#     total_reward += rewards
+#     env.render()
+# print('total_reward', total_reward)
+# print('__________________')
+#
+# obs = env.reset()
+# total_reward = 0
+# dones = False
+# while dones == False:
 #     action_masks = mask_fn(env)
 #     action, _states = model.predict(obs, action_masks=action_masks)
 #     # if (action == 0):
@@ -92,50 +110,34 @@ model.save("sc_1_c")
 #     env.render()
 # print('total_reward', total_reward)
 # print('__________________')
-# #
+#
 # obs = env.reset()
-# for i in range(700):
+# total_reward = 0
+# dones = False
+# while dones == False:
 #     action_masks = mask_fn(env)
 #     action, _states = model.predict(obs, action_masks=action_masks)
 #     # if (action == 0):
 #     #     print("QQQQQ")
 #     obs, rewards, dones, info = env.step(action)
+#     total_reward += rewards
 #     env.render()
+# print('total_reward', total_reward)
 # print('__________________')
-# # #
+#
 # obs = env.reset()
-# for i in range(700):
+# total_reward = 0
+# dones = False
+# while dones == False:
 #     action_masks = mask_fn(env)
 #     action, _states = model.predict(obs, action_masks=action_masks)
 #     # if (action == 0):
 #     #     print("QQQQQ")
 #     obs, rewards, dones, info = env.step(action)
+#     total_reward += rewards
 #     env.render()
+# print('total_reward', total_reward)
 # print('__________________')
-# #
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-
-
-
-
-
-
 
 
 

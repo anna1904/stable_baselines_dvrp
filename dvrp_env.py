@@ -161,7 +161,7 @@ class DVRPEnv(gym.Env):
                                  [self.vehicle_x_max] * self.n_orders +
                                   [self.vehicle_y_max] * self.n_orders+
                                   [2] * self.n_orders +
-                                  [4] * self.n_orders +
+                                  # [4] * self.n_orders +
                                   reward_per_order_max +
                                   o_time_max +
                                   [self.driver_capacity] +
@@ -171,7 +171,7 @@ class DVRPEnv(gym.Env):
                                   [self.vehicle_x_min] * self.n_orders +
                                   [self.vehicle_y_min] * self.n_orders +
                                   [0] * self.n_orders +
-                                  [0] * self.n_orders +
+                                  # [0] * self.n_orders +
                                   reward_per_order_min +
                                   o_time_min +
                                   [0] +
@@ -240,6 +240,17 @@ class DVRPEnv(gym.Env):
             self.clock += 1
         if self.clock >= self.episode_length:
             done = True
+            print('total_accepted_order == ', self._total_accepted_orders)
+            print('total_rejected_orders == ', self._total_rejected_orders)
+            print('total_delivered_orders == ', self._total_delivered_orders)
+            print('total_delivered_orders_zone == ', self._total_delivered_orders_zone)
+            print('total_depot_visits == ', self._total_depot_visits)
+            print('state', state)
+            for o in range(self.n_orders):
+                if self.o_status[o] >= 2:
+                    self.reward = (self.reward
+                                    - self.order_miss_penalty
+                                    - self.reward_per_order[o] * (self.o_status[o] == 2) / 3) #remove reward which was given for acceptance
 
         self.info['no_late_penalty_reward'] = self.reward
 
@@ -316,18 +327,18 @@ class DVRPEnv(gym.Env):
 
     def __update_environment_parameters(self):
         # Update the waiting times
-        for o in range(self.n_orders):
-            # if this is an active order, increase the waiting time
-            if self.o_status[o] >= 1:
-                self.o_time[o] += 1
-        for o in range(self.n_orders):
-            if self.o_time[o] >= self.order_promise:
-                if self.o_status[o] >= 2:
-                    self.reward = (self.reward
-                                   - self.order_miss_penalty
-                                   - self.reward_per_order[o] * (self.o_status[o] == 2) / 3
-                                   - self.reward_per_order[o] * (self.o_status[o] == 3) * 2 / 3)
-                self.__reset_order(o)
+        if self.acceptance_decision == 0:
+            for o in range(self.n_orders):
+                # if this is an active order, increase the waiting time
+                if self.o_status[o] >= 1:
+                    self.o_time[o] += 1
+            for o in range(self.n_orders):
+                if self.o_time[o] >= self.order_promise:
+                    if self.o_status[o] >= 2:
+                        self.reward = (self.reward
+                                       - self.order_miss_penalty
+                                       - self.reward_per_order[o] * (self.o_status[o] == 2) / 3) #remove reward which was given for acceptance
+                    self.__reset_order(o)
 
 
         self.acceptance_decision = 0
@@ -388,8 +399,9 @@ class DVRPEnv(gym.Env):
 
     def __create_state(self):
 
+        #\self.zones_order
         #
-        return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.zones_order + self.reward_per_order + self.o_time +
+        return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order + self.o_time +
                             [self.dr_left_capacity] + [self.clock])
 
 
@@ -477,11 +489,6 @@ class DVRPEnv(gym.Env):
             self.viewer = rendering.SimpleImageViewer()
         self.viewer.imshow(img)
         # return self.viewer.render(return_rgb_array = mode=='rgb_array')
-        print('total_accepted_order == ', self._total_accepted_orders)
-        print('total_rejected_orders == ', self._total_rejected_orders)
-        print('total_delivered_orders == ', self._total_delivered_orders)
-        print('total_delivered_orders_zone == ', self._total_delivered_orders_zone)
-        print('total_depot_visits == ', self._total_depot_visits)
         return self.viewer.isopen
 
     def close(self):
