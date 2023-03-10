@@ -1,5 +1,7 @@
+import os
 import numpy.random
 import stable_baselines3
+import datetime
 import gym
 import torch
 from stable_baselines3.common.env_util import make_vec_env
@@ -12,6 +14,12 @@ from sb3_contrib import MaskablePPO
 from sb3_contrib.common.wrappers import ActionMasker
 from stable_baselines3.common.utils import set_random_seed
 from sb3_contrib.common.maskable.policies import MaskableActorCriticPolicy
+from stable_baselines3.common.vec_env.base_vec_env import VecEnv, VecEnvStepReturn, VecEnvWrapper
+from sb3_contrib.common.maskable.evaluation import evaluate_policy
+from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
+from stable_baselines3.common.callbacks import EvalCallback
+from sb3_contrib.common.maskable.utils import get_action_masks
+now = datetime.datetime.now()
 
 
 #dvrp_v5 basic with time windows and order time in state
@@ -33,7 +41,6 @@ from sb3_contrib.common.maskable.policies import MaskableActorCriticPolicy
 
 #dvrp_v_8 acceptance order separately,no info about new order inside orders, except  o_statuses, PPO-11
 from stable_baselines3 import PPO
-# from stable_baselines3.common.evaluation import evaluate_policy
 
 #dvrp_v_9 the same just fix with o_time in position, PPO-12 time after new order, dvrp_10, PPO13 time before new order,  !!!commit dvrp_9(baseline) is different from the model
 
@@ -42,7 +49,9 @@ from stable_baselines3 import PPO
 #sc_1_b without locations PPO17
 #sc_1_c with locations and with zones PPO18
 
-#sc_2_a order time is not increased for acceptance decision, penalty is given at the end if the order is not delivered.
+#sc_2_a order time is not increased for acceptance decision, penalty is given at the end if the order is not delivered. PPO19
+#"sc_2_a_2" is for 4 envs
+#"sc_2_a_3" is for 4 envs
 
 
 
@@ -60,84 +69,80 @@ register(
     entry_point='dvrp_env:DVRPEnv', #your_env_folder.envs:NameOfYourEnv
 )
 
-def mask_fn(env: gym.Env) -> np.ndarray:
-    return env.valid_action_mask()
 
-
-env = gym.make("DVRPEnv-v0")
-env.seed(1)
+# env = DummyVecEnv([lambda: gym.make("DVRPEnv-v0")])
+# # Automatically normalize the input features and reward
+#
+env = make_vec_env("DVRPEnv-v0", n_envs=4, seed=1, vec_env_cls=DummyVecEnv)
+env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_obs=10.)
 set_random_seed(1)
-t1 = torch.get_rng_state()
-t2 = numpy.random.get_state()
-env = ActionMasker(env, mask_fn)  # Wrap to enable masking
+# t1 = torch.get_rng_state()
+# t2 = numpy.random.get_state()
 
+# eval_callback = EvalCallback(env, best_model_save_path='./best/',
+#                              log_path='./logs/', eval_freq=10000,
+#                              deterministic=True, render=False)
+# , callback=eval_callback
 path = "./a2c_cartpole_tensorboard/"
 model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=1, tensorboard_log=path, batch_size=128, learning_rate=0.0004)
-model.learn(total_timesteps=150000000, log_interval=100, progress_bar=True) #6 deleted
-model.save("sc_2_a")
-
+model.learn(total_timesteps=150, log_interval=1, progress_bar=True) #6 deleted 000000
 
 #
+log_dir = "stats/"
+model.save(f"sc_2_a_2_{now.strftime('%m-%d_%H-%M')}")
+stats_path = os.path.join(log_dir, "vec_normalize.pkl")
+env.save(stats_path)
+
+#
+# #
+env = make_vec_env("DVRPEnv-v0", n_envs=4, seed=1, vec_env_cls=DummyVecEnv)
+env = VecNormalize.load(stats_path, env)
+
+model = MaskablePPO.load(f"sc_2_a_2_{now.strftime('%m-%d_%H-%M')}", env = env)
+# #  do not update them at test time
+# env.training = False
+# # reward normalization is not needed at test time
+# env.norm_reward = False
+# # policy = model.policy
+# # policy.save("sac_policy_pendulum")
+#
+# mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=1)
+# print(f"mean_reward={mean_reward:.2f} +/- {std_reward}")
+
 # torch.set_rng_state(t1)
 # numpy.random.set_state(t2)
-# model = MaskablePPO.load("sc_1_b", env = env)
 
-# obs = env.reset()
-# total_reward = 0
+# vec_env = model.get_env()
+
+# vec_env = model.get_env()
+# obs = vec_env.reset()
+# total_reward = np.array([0.,0.,0.,0.])
 # dones = False
-# while dones == False:
-#     action_masks = mask_fn(env)
-#     action, _states = model.predict(obs, action_masks=action_masks)
-#     # if (action == 0):
-#     #     print("QQQQQ")
+# for i in range(1000):
+#     action_masks = get_action_masks(env)
+#     action, _states = model.predict(obs, deterministic=True, action_masks=action_masks)
 #     obs, rewards, dones, info = env.step(action)
-#     print(rewards)
-#     total_reward += rewards
-#     env.render()
-# print('total_reward', total_reward)
-# print('__________________')
+#     r = np.array(rewards)
+#     total_reward += r
+#     if (dones[0] == True):
+#         print("FIRST")
+#         print(rewards)
+#         print(total_reward)
+#     if (dones[1] == True):
+#         print("SECOND")
+#         print(rewards)
+#         print(total_reward)
+#     if (dones[2] == True):
+#         print("THIRD")
+#         print(rewards)
+#         print(total_reward)
+#     if (dones[3] == True):
+#         print("FOURTH")
+#         print(rewards)
+#         print(total_reward)
+
+    # env.render()
 #
-# obs = env.reset()
-# total_reward = 0
-# dones = False
-# while dones == False:
-#     action_masks = mask_fn(env)
-#     action, _states = model.predict(obs, action_masks=action_masks)
-#     # if (action == 0):
-#     #     print("QQQQQ")
-#     obs, rewards, dones, info = env.step(action)
-#     total_reward += rewards
-#     env.render()
-# print('total_reward', total_reward)
-# print('__________________')
-#
-# obs = env.reset()
-# total_reward = 0
-# dones = False
-# while dones == False:
-#     action_masks = mask_fn(env)
-#     action, _states = model.predict(obs, action_masks=action_masks)
-#     # if (action == 0):
-#     #     print("QQQQQ")
-#     obs, rewards, dones, info = env.step(action)
-#     total_reward += rewards
-#     env.render()
-# print('total_reward', total_reward)
-# print('__________________')
-#
-# obs = env.reset()
-# total_reward = 0
-# dones = False
-# while dones == False:
-#     action_masks = mask_fn(env)
-#     action, _states = model.predict(obs, action_masks=action_masks)
-#     # if (action == 0):
-#     #     print("QQQQQ")
-#     obs, rewards, dones, info = env.step(action)
-#     total_reward += rewards
-#     env.render()
-# print('total_reward', total_reward)
-# print('__________________')
 
 
 

@@ -12,6 +12,7 @@ from utils.draw import *
 from utils.sim_annel import *
 from utils.cheapest_insertion import *
 from scipy.stats import truncnorm
+from typing import List, Optional
 
 #without reward per order
 #for now without depot capacity
@@ -100,6 +101,7 @@ class DVRPEnv(gym.Env):
 
         self._total_episode_rewards = 0
         self.reward = None
+        self.total_reward = 0
 
         self._step_count = 0
         self.clock = 0
@@ -187,6 +189,7 @@ class DVRPEnv(gym.Env):
 
     def step(self, action):
         orig_obs, rew, done, info = self.__orig_step(action)
+        self.total_reward += rew
         # self.__update_avail_actions()
         # self.update_acceptance_decision()
         obs = {
@@ -240,12 +243,13 @@ class DVRPEnv(gym.Env):
             self.clock += 1
         if self.clock >= self.episode_length:
             done = True
-            print('total_accepted_order == ', self._total_accepted_orders)
-            print('total_rejected_orders == ', self._total_rejected_orders)
-            print('total_delivered_orders == ', self._total_delivered_orders)
-            print('total_delivered_orders_zone == ', self._total_delivered_orders_zone)
-            print('total_depot_visits == ', self._total_depot_visits)
-            print('state', state)
+            # print('total_accepted_order == ', self._total_accepted_orders)
+            # print('total_rejected_orders == ', self._total_rejected_orders)
+            # print('total_delivered_orders == ', self._total_delivered_orders)
+            # print('total_delivered_orders_zone == ', self._total_delivered_orders_zone)
+            # print('total_depot_visits == ', self._total_depot_visits)
+            # print('state', state)
+            # print('total_reward', self.total_reward)
             for o in range(self.n_orders):
                 if self.o_status[o] >= 2:
                     self.reward = (self.reward
@@ -418,6 +422,9 @@ class DVRPEnv(gym.Env):
                     avail_actions[i+4] = 1
         return avail_actions
 
+    def action_masks(self) -> List[bool]:
+        return self.valid_action_mask()
+
     def get_total_actions(self):
         return self.action_max
 
@@ -444,6 +451,7 @@ class DVRPEnv(gym.Env):
         self.reward_per_order = [0] * self.n_orders
         self.acceptance_decision = 0
         self.images = [self._base_img]
+        self.total_reward = 0
 
         self._total_accepted_orders = 0
         self._total_delivered_orders = 0
