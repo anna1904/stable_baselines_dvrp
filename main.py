@@ -55,6 +55,8 @@ from stable_baselines3 import PPO
 #"sc_2_a_4" is for 4 envs  PPO26, without normalization and remove penalty at the end for non-delivered customers, you didnt save the model
 #"sc_2_b_3" is for 4 envs  PPO28-PPO29-PPO30(rs=1), without locations, normalize just observation and remove penalty at the end for non-delivered customers (PPO27 without normalization)
 
+#"sc_3_a_1" is for 4 envs  PPO31, without locations, normalize just observation and remove penalty at the end for non-delivered customers, disable actions with lack capacity
+
 #remove locations
 #give 2 regions with large reward far away
 #image#
@@ -70,48 +72,43 @@ register(
 )
 
 
-# env = DummyVecEnv([lambda: gym.make("DVRPEnv-v0")])
-# Automatically normalize the input features and reward
-
 env = make_vec_env("DVRPEnv-v0", n_envs=4, seed=1, vec_env_cls=DummyVecEnv)
 env = VecNormalize(env, norm_obs=True, clip_obs=10.)
 set_random_seed(1)
 
-# t1 = torch.get_rng_state()
-# t2 = numpy.random.get_state()
 
 # eval_callback = EvalCallback(env, best_model_save_path='./best/',
 #                              log_path='./logs/', eval_freq=10000,
 #                              deterministic=True, render=False)
 # , callback=eval_callback
+
+
 path = "./a2c_cartpole_tensorboard/"
 model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=1, tensorboard_log=path, batch_size=128, learning_rate=0.0004)
 model.learn(total_timesteps=150000000, log_interval=100, progress_bar=True) #6 deleted
 
-#
+
 log_dir = "stats/"
 model.save(f"sc_2_b_3_{now.strftime('%m-%d_%H-%M')}")
 stats_path = os.path.join(log_dir, "vec_normalize_sc_2_b_3.pkl")
 env.save(stats_path)
 
 #
-# #
 env = make_vec_env("DVRPEnv-v0", n_envs=4, seed=1, vec_env_cls=DummyVecEnv)
 env = VecNormalize.load(stats_path, env)
-
 model = MaskablePPO.load(f"sc_2_b_3_{now.strftime('%m-%d_%H-%M')}", env = env)
+
+
+
 # #  do not update them at test time
 # env.training = False
 # # reward normalization is not needed at test time
 # env.norm_reward = False
-# # policy = model.policy
-# # policy.save("sac_policy_pendulum")
-#
+
+
 mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=10)
 print(f"mean_reward={mean_reward:.2f} +/- {std_reward}")
 
-# torch.set_rng_state(t1)
-# numpy.random.set_state(t2)
 
 # vec_env = model.get_env()
 
@@ -186,4 +183,3 @@ print(f"mean_reward={mean_reward:.2f} +/- {std_reward}")
 #     # VecEnv resets automatically
 #     if done:
 #       obs = env.reset()
-

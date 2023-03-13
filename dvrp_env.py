@@ -14,38 +14,39 @@ from utils.cheapest_insertion import *
 from scipy.stats import truncnorm
 from typing import List, Optional
 
-#without reward per order
-#for now without depot capacity
+
+# without reward per order
+# for now without depot capacity
 # ACTION:
 # 0: Wait (Do nothing)
 # 1 Accept the order
 # 2: Return to depot
 # 3: Deliver order i (by moving one step towards the respective delivery location)
 
-#ORDER STATUS:
+# ORDER STATUS:
 # 0: InACtive (# 2: Rejected, Delivered)
 # 1: Available
 # 2: Accepted
 
 
 class DVRPEnv(gym.Env):
-    def __init__(self, episode_limit=100,  grid_shape=(10, 10), env_config={}):
+    def __init__(self, episode_limit=100, grid_shape=(10, 10), env_config={}):
         config_defaults = {
-                           'n_orders': 5,
-                           'order_prob': 0.3,
-                           'driver_capacity': 5,
-                            'map_quad': (10, 10),
-                           'order_promise': 60,
-                           'order_timeout_prob': 0.15,
-                           'episode_length': 480,
-                           'num_zones': 4,
-                           'order_probs_per_zone': (0.1, 0.4, 0.4, 0.1),
-                           'order_reward_min': (6, 2, 2, 6),
-                           'order_reward_max': (10, 4, 4, 10),
-                           'half_norm_scale_reward_per_zone': (0.5, 0.5, 0.5, 0.5),
-                           'penalty_per_timestep': 0.1,
-                           'penalty_per_move': 0.1,
-                           'order_miss_penalty': 50}
+            'n_orders': 5,
+            'order_prob': 0.3,
+            'driver_capacity': 5,
+            'map_quad': (10, 10),
+            'order_promise': 60,
+            'order_timeout_prob': 0.15,
+            'episode_length': 480,
+            'num_zones': 4,
+            'order_probs_per_zone': (0.1, 0.4, 0.4, 0.1),
+            'order_reward_min': (6, 2, 2, 6),
+            'order_reward_max': (10, 4, 4, 10),
+            'half_norm_scale_reward_per_zone': (0.5, 0.5, 0.5, 0.5),
+            'penalty_per_timestep': 0.1,
+            'penalty_per_move': 0.1,
+            'order_miss_penalty': 50}
 
         for key, val in config_defaults.items():
             val = env_config.get(key, val)  # Override defaults with constructor parameters
@@ -53,8 +54,7 @@ class DVRPEnv(gym.Env):
             if key not in env_config:
                 env_config[key] = val
 
-
-        np.random.seed(1) #random seed
+        np.random.seed(1)  # random seed
         assert len(self.order_probs_per_zone) == self.num_zones
 
         self.__draw_base_img()
@@ -94,7 +94,7 @@ class DVRPEnv(gym.Env):
         self._grid_shape = grid_shape  # size of grid or map
         self.depot_location = (round(self._grid_shape[0] / 2), round(self._grid_shape[1] / 2))  # set at centre of map
 
-        #rewards
+        # rewards
         self.invalid_action_penalty = 5
         self.delivery_reward = 2
         self.accept_reward = 1
@@ -111,7 +111,7 @@ class DVRPEnv(gym.Env):
         self._successful_delivery = 0
         self._total_accepted_orders = 0
         self._total_delivered_orders = 0
-        self._total_delivered_orders_zone = [0,0,0,0]
+        self._total_delivered_orders_zone = [0, 0, 0, 0]
         self._total_rejected_orders = 0
         self._total_depot_visits = 0
 
@@ -128,7 +128,7 @@ class DVRPEnv(gym.Env):
         self.clock_max = self._episode_length
 
         # Generate homogenous generation of orders throughout episode
-        self.order_generation_window = self._episode_length   # time when orders can appear
+        self.order_generation_window = self._episode_length  # time when orders can appear
         self.generated_orders = 0
         self.current_order_id = -1
 
@@ -138,7 +138,7 @@ class DVRPEnv(gym.Env):
         self.o_status = []
         self.o_delivered = []
         self.zones_order = []
-        #Render parameters
+        # Render parameters
         self.icon_av, _ = draw_image('rsz_1rsz_truck.png')
         self.icon_pkg, _ = draw_image('rsz_1pin.png')
         self.icon_delivered, _ = draw_image('rsz_delivered.png')
@@ -156,12 +156,12 @@ class DVRPEnv(gym.Env):
         reward_per_order_min = [0] * self.n_orders
         reward_per_order_max = [max(self.order_reward_max)] * self.n_orders
 
-        #missed order
+        # missed order
         self.missed_order_reward = 0
 
         self._obs_high = np.array([self.vehicle_x_max, self.vehicle_y_max] +
-                                 # [self.vehicle_x_max] * self.n_orders +
-                                 #  [self.vehicle_y_max] * self.n_orders+
+                                  # [self.vehicle_x_max] * self.n_orders +
+                                  #  [self.vehicle_y_max] * self.n_orders+
                                   [2] * self.n_orders +
                                   # [4] * self.n_orders +
                                   reward_per_order_max +
@@ -170,20 +170,20 @@ class DVRPEnv(gym.Env):
                                   [self.clock_max])
 
         self._obs_low = np.array([self.vehicle_x_min, self.vehicle_y_min] +
-                                  # [self.vehicle_x_min] * self.n_orders +
-                                  # [self.vehicle_y_min] * self.n_orders +
-                                  [0] * self.n_orders +
-                                  # [0] * self.n_orders +
-                                  reward_per_order_min +
-                                  o_time_min +
-                                  [0] +
-                                  [0]
-                                )
-                                 # [self.vehicle_x_min, self.vehicle_y_max] #the last is the location to which agent is moving
-                                 
+                                 # [self.vehicle_x_min] * self.n_orders +
+                                 # [self.vehicle_y_min] * self.n_orders +
+                                 [0] * self.n_orders +
+                                 # [0] * self.n_orders +
+                                 reward_per_order_min +
+                                 o_time_min +
+                                 [0] +
+                                 [0]
+                                 )
+        # [self.vehicle_x_min, self.vehicle_y_max] #the last is the location to which agent is moving
+
         self.observation_space = spaces.Box(self._obs_low, self._obs_high)
         #
-        self.action_max = 1 + 1 + 1 + 1 + self.n_orders  #do nothing, accept, reject, depot, move to order
+        self.action_max = 1 + 1 + 1 + 1 + self.n_orders  # do nothing, accept, reject, depot, move to order
         self.action_space = spaces.Discrete(self.action_max)
         # self.action_space = spaces.Tuple((spaces.Discrete(2), spaces.Discrete(config_defaults.n_orders + 1)))
 
@@ -193,11 +193,10 @@ class DVRPEnv(gym.Env):
         # self.__update_avail_actions()
         # self.update_acceptance_decision()
         obs = {
-            "action_mask": np.array([1]*3 + [1]*self.n_orders),
+            "action_mask": np.array([1] * 3 + [1] * self.n_orders),
             "real_obs": orig_obs,
         }
         return orig_obs, rew, done, info
-
 
     def __orig_step(self, action):
         done = False
@@ -252,7 +251,8 @@ class DVRPEnv(gym.Env):
             # print('total_reward', self.total_reward)
             for o in range(self.n_orders):
                 if self.o_status[o] >= 2:
-                    self.reward = (self.reward - self.reward_per_order[o] * (self.o_status[o] == 2)/ 3) #remove reward which was given for acceptance
+                    self.reward = (self.reward - self.reward_per_order[o] * (
+                                self.o_status[o] == 2) / 3)  # remove reward which was given for acceptance
 
         self.info['no_late_penalty_reward'] = self.reward
 
@@ -287,7 +287,8 @@ class DVRPEnv(gym.Env):
                         self._update_statistics(self.o_x[o])
                         self.o_delivered[o] = 1
                         if self.o_time[o] <= self.order_promise:
-                            self.reward += 2*self.reward_per_order[o]/3  # Rest of the reward was given in accept and deliver
+                            self.reward += 2 * self.reward_per_order[
+                                o] / 3  # Rest of the reward was given in accept and deliver
                         self.dr_left_capacity -= 1
                         self.__reset_order(o)
                     else:
@@ -302,16 +303,16 @@ class DVRPEnv(gym.Env):
             raise Exception(
                 'Misaligned action space and driver update function: {}, {}, {}'.format(action_type, translated_action,
                                                                                         relevant_order_index))
+
     def _update_statistics(self, x):
-        if x in {0,1,2}:
-            self._total_delivered_orders_zone[0] +=1
-        elif x in {3,4,5}:
+        if x in {0, 1, 2}:
+            self._total_delivered_orders_zone[0] += 1
+        elif x in {3, 4, 5}:
             self._total_delivered_orders_zone[1] += 1
-        elif x in {6,7}:
+        elif x in {6, 7}:
             self._total_delivered_orders_zone[2] += 1
         else:
             self._total_delivered_orders_zone[3] += 1
-
 
     def __reset_order(self, order_num):
         self.o_status[order_num] = 0
@@ -322,6 +323,7 @@ class DVRPEnv(gym.Env):
         self.o_delivered[order_num] = 0
         self.reward_per_order[order_num] = 0
         self.reset_received_order()
+
     def reset_received_order(self):
         self.received_order_x = 0
         self.received_order_y = 0
@@ -339,9 +341,9 @@ class DVRPEnv(gym.Env):
                     if self.o_status[o] >= 2:
                         self.reward = (self.reward
                                        - self.order_miss_penalty
-                                       - self.reward_per_order[o] * (self.o_status[o] == 2) / 3) #remove reward which was given for acceptance
+                                       - self.reward_per_order[o] * (self.o_status[
+                                                                         o] == 2) / 3)  # remove reward which was given for acceptance
                     self.__reset_order(o)
-
 
         self.acceptance_decision = 0
         # Create new orders (changed to create new order)
@@ -359,10 +361,10 @@ class DVRPEnv(gym.Env):
                     self.o_x[o] = o_x
                     self.o_y[o] = o_y
                     self.reward_per_order[o] = order_reward
-                    self.zones_order[o] = zone+1
+                    self.zones_order[o] = zone + 1
                     self.acceptance_decision = 1
                 break
-            #generate missed order
+            # generate missed order
         if self.o_status.count(2) == self.n_orders:
             if np.random.random(1)[0] < self.order_prob:
                 zone = np.random.choice(self.num_zones, p=self.order_probs_per_zone)
@@ -387,7 +389,6 @@ class DVRPEnv(gym.Env):
 
         return order_x, order_y, reward
 
-
     def __update_dr_xy(self, a):
         if a == 1:  # UP
             self.dr_y = min(self.map_max_y, self.dr_y + 1)
@@ -398,15 +399,13 @@ class DVRPEnv(gym.Env):
         elif a == 4:  # RIGHT
             self.dr_x = min(self.map_max_x, self.dr_x + 1)
 
-
     def __create_state(self):
 
-        #\self.zones_order
+        # \self.zones_order
         # + self.o_x + self.o_y
         #
         return np.array([self.dr_x] + [self.dr_y] + self.o_status + self.reward_per_order + self.o_time +
-                            [self.dr_left_capacity] + [self.clock])
-
+                        [self.dr_left_capacity] + [self.clock])
 
     def valid_action_mask(self):
         avail_actions = np.array([0] * self.action_max)
@@ -417,8 +416,8 @@ class DVRPEnv(gym.Env):
             avail_actions[0] = 1
             avail_actions[3] = 1
             for i, status in enumerate(self.o_status):
-                if status == 2: #accepted
-                    avail_actions[i+4] = 1
+                if status == 2 and self.dr_left_capacity >= 1:  # accepted
+                    avail_actions[i + 4] = 1
         return avail_actions
 
     def action_masks(self) -> List[bool]:
@@ -458,6 +457,7 @@ class DVRPEnv(gym.Env):
         self._total_rejected_orders = 0
         self._total_depot_visits = 0
         self.missed_order_reward = 0
+        self.dr_left_capacity = self.driver_capacity
 
         return self.__create_state()
 
@@ -472,8 +472,7 @@ class DVRPEnv(gym.Env):
 
         return order_x, order_y
 
-
-    def render(self, mode = 'human', close = False):
+    def render(self, mode='human', close=False):
 
         img = copy.copy(self._base_img)
 
@@ -526,6 +525,5 @@ class DVRPEnv(gym.Env):
                     "n_agents": self.n_agents,
                     "episode_limit": self.episode_limit}
         return env_info
-        
 
 
