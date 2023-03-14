@@ -160,8 +160,8 @@ class DVRPEnv(gym.Env):
         self.missed_order_reward = 0
 
         self._obs_high = np.array([self.vehicle_x_max, self.vehicle_y_max] +
-                                  # [self.vehicle_x_max] * self.n_orders +
-                                  #  [self.vehicle_y_max] * self.n_orders+
+                                  [self.vehicle_x_max] * self.n_orders +
+                                   [self.vehicle_y_max] * self.n_orders+
                                   [2] * self.n_orders +
                                   # [4] * self.n_orders +
                                   reward_per_order_max +
@@ -170,8 +170,8 @@ class DVRPEnv(gym.Env):
                                   [self.clock_max])
 
         self._obs_low = np.array([self.vehicle_x_min, self.vehicle_y_min] +
-                                 # [self.vehicle_x_min] * self.n_orders +
-                                 # [self.vehicle_y_min] * self.n_orders +
+                                 [self.vehicle_x_min] * self.n_orders +
+                                 [self.vehicle_y_min] * self.n_orders +
                                  [0] * self.n_orders +
                                  # [0] * self.n_orders +
                                  reward_per_order_min +
@@ -331,7 +331,7 @@ class DVRPEnv(gym.Env):
 
     def __update_environment_parameters(self):
         # Update the waiting times
-        if self.acceptance_decision == 0:
+        if (self.acceptance_decision == 0):
             for o in range(self.n_orders):
                 # if this is an active order, increase the waiting time
                 if self.o_status[o] >= 1:
@@ -402,9 +402,9 @@ class DVRPEnv(gym.Env):
     def __create_state(self):
 
         # \self.zones_order
-        # + self.o_x + self.o_y
         #
-        return np.array([self.dr_x] + [self.dr_y] + self.o_status + self.reward_per_order + self.o_time +
+        #
+        return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order + self.o_time +
                         [self.dr_left_capacity] + [self.clock])
 
     def valid_action_mask(self):

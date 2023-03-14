@@ -56,6 +56,8 @@ from stable_baselines3 import PPO
 #"sc_2_b_3" is for 4 envs  PPO28-PPO29-PPO30(rs=1), without locations, normalize just observation and remove penalty at the end for non-delivered customers (PPO27 without normalization)
 
 #"sc_3_a_1" is for 4 envs  PPO31, without locations, normalize just observation and remove penalty at the end for non-delivered customers, disable actions with lack capacity
+#"sc_3_b_1" is for 4 envs  PPO35, with locations, normalize just observation and remove penalty at the end for non-delivered customers, disable actions with lack capacity
+
 
 #remove locations
 #give 2 regions with large reward far away
@@ -89,14 +91,14 @@ model.learn(total_timesteps=150000000, log_interval=100, progress_bar=True) #6 d
 
 
 log_dir = "stats/"
-model.save(f"sc_2_b_3_{now.strftime('%m-%d_%H-%M')}")
+model.save(f"sc_3_b_1_{now.strftime('%m-%d_%H-%M')}")
 stats_path = os.path.join(log_dir, "vec_normalize_sc_2_b_3.pkl")
 env.save(stats_path)
 
 #
 env = make_vec_env("DVRPEnv-v0", n_envs=4, seed=1, vec_env_cls=DummyVecEnv)
 env = VecNormalize.load(stats_path, env)
-model = MaskablePPO.load(f"sc_2_b_3_{now.strftime('%m-%d_%H-%M')}", env = env)
+model = MaskablePPO.load(f"sc_3_b_1_{now.strftime('%m-%d_%H-%M')}", env = env)
 
 
 
