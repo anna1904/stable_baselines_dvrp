@@ -68,7 +68,11 @@ from stable_baselines3 import PPO
 
 #sc_4_b_5 with zones and locations rs=1, eval each 100 in 10000 ppo42
 #sc_4_b_6 with zones and locations rs=2, eval each 100 in 10000 ppo43
-#sc_4_b_7 wihout zones but with distance how far away from the closest in routing PPO44 rs = 1
+
+#After fail
+#sc_4_b_7 wihout zones but with distance how far away from the closest in routing PPO44 rs = 1, 18 if no orders to deliver
+#sc_4_b_8 wihout zones but with distance how far away from the closest in routing PPO45 rs = 1, 0 if no orders to deliver
+
 
 #remove locations
 #give 2 regions with large reward far away
@@ -84,34 +88,32 @@ register(
     entry_point='dvrp_env:DVRPEnv', #your_env_folder.envs:NameOfYourEnv
 )
 
-env = gym.make("DVRPEnv-v0")
 
-# env = make_vec_env("DVRPEnv-v0", n_envs=4, seed=1, vec_env_cls=DummyVecEnv)
+env = make_vec_env("DVRPEnv-v0", n_envs=4, seed=1, vec_env_cls=DummyVecEnv)
 # env = VecNormalize(env, norm_obs=True, clip_obs=10.)
 set_random_seed(1)
-
-
-# eval_callback = MaskableEvalCallback(env, best_model_save_path='./best_sc_4_b_7_/',
-#                              log_path='./logs/', eval_freq=100000, n_eval_episodes=100,
-#                              deterministic=True, render=False, use_masking=True)
-# , callback=eval_callback
-
-
+#
+#
+eval_callback = MaskableEvalCallback(env, best_model_save_path='./best_sc_4_b_8_/',
+                             log_path='./logs/', eval_freq=100000, n_eval_episodes=100,
+                             deterministic=True, render=False, use_masking=True)
+#
+#
 path = "./a2c_cartpole_tensorboard/"
-# , callback=eval_callback
+#
 model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=1, tensorboard_log=path, batch_size=128, learning_rate=0.0004)
-model.learn(total_timesteps=150000000, log_interval=10, progress_bar=True) #6 deleted
-
-
-# log_dir = "stats/"
-model.save(f"sc_4_b_7_{now.strftime('%m-%d_%H-%M')}")
+model.learn(total_timesteps=150000000, log_interval=10, progress_bar=True, callback=eval_callback) #6 deleted
+#
+#
+# # log_dir = "stats/"
+model.save(f"sc_4_b_8_{now.strftime('%m-%d_%H-%M')}")
 # stats_path = os.path.join(log_dir, "vec_normalize_sc_3_b_1.pkl")
 # env.save(stats_path)
 
 #
 # env = make_vec_env("DVRPEnv-v0", n_envs=4, seed=1, vec_env_cls=DummyVecEnv)
 # env = VecNormalize.load(stats_path, env)
-model = MaskablePPO.load(f"sc_4_b_7_{now.strftime('%m-%d_%H-%M')}", env = env)
+model = MaskablePPO.load(f"sc_4_b_8_{now.strftime('%m-%d_%H-%M')}", env = env)
 
 
 
@@ -126,7 +128,7 @@ print(f"mean_reward={mean_reward:.2f} +/- {std_reward}")
 
 
 # vec_env = model.get_env()
-
+#
 # vec_env = model.get_env()
 # obs = vec_env.reset()
 # total_reward = np.array([0.,0.,0.,0.])

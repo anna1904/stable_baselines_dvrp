@@ -158,7 +158,7 @@ class DVRPEnv(gym.Env):
 
         # missed order
         self.missed_order_reward = 0
-        self.closest_distance = 18
+        self.closest_distance = 0
 
         self._obs_high = np.array([self.vehicle_x_max, self.vehicle_y_max] +
                                   [self.vehicle_x_max] * self.n_orders +
@@ -263,13 +263,19 @@ class DVRPEnv(gym.Env):
         return state, self.reward, done, self.info
 
     def update_closest_distance(self):
+        order_exist = False
         closest_distance = 18
-        for i, status in enumerate(self.order_status):
+        for i, status in enumerate(self.o_status):
             if status == 2:
+                order_exist = True
                 new_distance = abs(self.dr_x - self.o_x[i]) + abs(self.dr_y - self.o_y[i])
                 if new_distance < closest_distance:
                     closest_distance = new_distance
-        self.closest_distance = closest_distance
+        if order_exist:
+            self.closest_distance = closest_distance
+        else:
+            self.closest_distance = 0
+
 
 
     def __update_driver_parameters(self, action_type, translated_action, relevant_order_index):
@@ -476,7 +482,7 @@ class DVRPEnv(gym.Env):
         self._total_depot_visits = 0
         self.missed_order_reward = 0
         self.dr_left_capacity = self.driver_capacity
-        self.closest_distance = 18
+        self.closest_distance = 0
 
         return self.__create_state()
 
