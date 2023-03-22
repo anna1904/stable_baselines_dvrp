@@ -159,6 +159,7 @@ class DVRPEnv(gym.Env):
         # missed order
         self.missed_order_reward = 0
         self.closest_distance = 0
+        self.closest_distance_node = 0
 
         self._obs_high = np.array([self.vehicle_x_max, self.vehicle_y_max] +
                                   [self.vehicle_x_max] * self.n_orders +
@@ -276,8 +277,6 @@ class DVRPEnv(gym.Env):
         else:
             self.closest_distance = 0
 
-
-
     def __update_driver_parameters(self, action_type, translated_action, relevant_order_index):
         if action_type == 'wait':
             pass  # no action
@@ -383,6 +382,7 @@ class DVRPEnv(gym.Env):
                     self.reward_per_order[o] = order_reward
                     self.zones_order[o] = zone + 1
                     self.acceptance_decision = 1
+                    # self.closest_distance_node = abs(self.dr_x - o_x) + abs(self.dr_y - o_y)
                 break
             # generate missed order
         if self.o_status.count(2) == self.n_orders:
@@ -424,7 +424,7 @@ class DVRPEnv(gym.Env):
         # \
         #self.zones_order
         if self.acceptance_decision == 1:
-            return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order  + self.o_time +
+            return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status +self.reward_per_order + self.o_time +
                         [self.dr_left_capacity] + [0] + [self.clock])
         else:
             return np.array(
@@ -483,6 +483,7 @@ class DVRPEnv(gym.Env):
         self.missed_order_reward = 0
         self.dr_left_capacity = self.driver_capacity
         self.closest_distance = 0
+        self.closest_distance_node = 0
 
         return self.__create_state()
 

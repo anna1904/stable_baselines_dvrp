@@ -72,6 +72,9 @@ from stable_baselines3 import PPO
 #After fail
 #sc_4_b_7 wihout zones but with distance how far away from the closest in routing PPO44 rs = 1, 18 if no orders to deliver
 #sc_4_b_8 wihout zones but with distance how far away from the closest in routing PPO45 rs = 1, 0 if no orders to deliver
+#sc_4_b_9 wihout zones but with distance how far away from the closest in routing PPO46 rs = 1, 0 if no orders to deliver,
+# also distance to the order to be accepted
+#sc_4_b_10 wihout zones but with distance how far away from the closest in routing PPO47 rs = 2, 0 if no orders to deliver,
 
 
 #remove locations
@@ -91,10 +94,10 @@ register(
 
 env = make_vec_env("DVRPEnv-v0", n_envs=4, seed=1, vec_env_cls=DummyVecEnv)
 # env = VecNormalize(env, norm_obs=True, clip_obs=10.)
-set_random_seed(1)
+set_random_seed(2)
 #
 #
-eval_callback = MaskableEvalCallback(env, best_model_save_path='./best_sc_4_b_8_/',
+eval_callback = MaskableEvalCallback(env, best_model_save_path=f"./best_sc_4_b_10_{now.strftime('%m-%d_%H-%M')}/",
                              log_path='./logs/', eval_freq=100000, n_eval_episodes=100,
                              deterministic=True, render=False, use_masking=True)
 #
@@ -102,18 +105,18 @@ eval_callback = MaskableEvalCallback(env, best_model_save_path='./best_sc_4_b_8_
 path = "./a2c_cartpole_tensorboard/"
 #
 model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=1, tensorboard_log=path, batch_size=128, learning_rate=0.0004)
-model.learn(total_timesteps=150000000, log_interval=10, progress_bar=True, callback=eval_callback) #6 deleted
+model.learn(total_timesteps=130000000, log_interval=10, progress_bar=True, callback=eval_callback) #6 deleted
 #
 #
 # # log_dir = "stats/"
-model.save(f"sc_4_b_8_{now.strftime('%m-%d_%H-%M')}")
+model.save(f"sc_4_b_10_{now.strftime('%m-%d_%H-%M')}")
 # stats_path = os.path.join(log_dir, "vec_normalize_sc_3_b_1.pkl")
 # env.save(stats_path)
 
 #
 # env = make_vec_env("DVRPEnv-v0", n_envs=4, seed=1, vec_env_cls=DummyVecEnv)
 # env = VecNormalize.load(stats_path, env)
-model = MaskablePPO.load(f"sc_4_b_8_{now.strftime('%m-%d_%H-%M')}", env = env)
+model = MaskablePPO.load(f"sc_4_b_10_{now.strftime('%m-%d_%H-%M')}", env = env)
 
 
 
