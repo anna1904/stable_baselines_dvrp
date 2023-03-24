@@ -169,7 +169,7 @@ class DVRPEnv(gym.Env):
                                   reward_per_order_max +
                                   o_time_max +
                                   [self.driver_capacity] +
-                                  [18] +
+                                  # [18] +
                                   [self.clock_max])
 
         self._obs_low = np.array([self.vehicle_x_min, self.vehicle_y_min] +
@@ -180,7 +180,7 @@ class DVRPEnv(gym.Env):
                                  reward_per_order_min +
                                  o_time_min +
                                  [0] +
-                                 [0] +
+                                 # [0] +
                                  [0]
                                  )
         # [self.vehicle_x_min, self.vehicle_y_max] #the last is the location to which agent is moving
@@ -423,13 +423,13 @@ class DVRPEnv(gym.Env):
 
         # \
         #self.zones_order
-        if self.acceptance_decision == 1:
+        # if self.acceptance_decision == 1:
             return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status +self.reward_per_order + self.o_time +
-                        [self.dr_left_capacity] + [0] + [self.clock])
-        else:
-            return np.array(
-                [self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order + self.o_time +
-                [self.dr_left_capacity] + [self.closest_distance] + [self.clock])
+                        [self.dr_left_capacity] + [self.clock])
+        # else:
+        #     return np.array(
+        #         [self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order + self.o_time +
+        #         [self.dr_left_capacity] + [self.closest_distance] + [self.clock])
 
     def valid_action_mask(self):
         avail_actions = np.array([0] * self.action_max)

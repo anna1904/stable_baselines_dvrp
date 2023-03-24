@@ -21,6 +21,7 @@ from stable_baselines3.common.callbacks import EvalCallback
 from sb3_contrib.common.maskable.utils import get_action_masks
 from sb3_contrib.common.maskable.callbacks import MaskableEvalCallback
 now = datetime.datetime.now()
+import torch as th
 
 
 #dvrp_v5 basic with time windows and order time in state
@@ -76,6 +77,9 @@ from stable_baselines3 import PPO
 # also distance to the order to be accepted
 #sc_4_b_10 wihout zones but with distance how far away from the closest in routing PPO47 rs = 2, 0 if no orders to deliver,
 
+#After meeting
+#sc_5_b_1 with normalization standard scenario rs=1
+#sc_5_b_2 with normalization standard scenario rs=1, 512 512
 
 #remove locations
 #give 2 regions with large reward far away
@@ -91,32 +95,36 @@ register(
     entry_point='dvrp_env:DVRPEnv', #your_env_folder.envs:NameOfYourEnv
 )
 
-
 env = make_vec_env("DVRPEnv-v0", n_envs=4, seed=1, vec_env_cls=DummyVecEnv)
-# env = VecNormalize(env, norm_obs=True, clip_obs=10.)
-set_random_seed(2)
+env = VecNormalize(env, training=True, norm_obs=True, clip_obs=481., norm_reward = True, clip_reward=70.)
+set_random_seed(1)
 #
 #
-eval_callback = MaskableEvalCallback(env, best_model_save_path=f"./best_sc_4_b_10_{now.strftime('%m-%d_%H-%M')}/",
-                             log_path='./logs/', eval_freq=100000, n_eval_episodes=100,
-                             deterministic=True, render=False, use_masking=True)
+policy_kwargs = dict(activation_fn=th.nn.ReLU,
+                     net_arch=dict(pi=[512, 512], vf=[512, 512]))
+#
+# eval_callback = MaskableEvalCallback(env, best_model_save_path=f"./best_sc_4_b_10_{now.strftime('%m-%d_%H-%M')}/",
+#                              log_path='./logs/', eval_freq=100000, n_eval_episodes=100,
+#                              deterministic=True, render=False, use_masking=True)
 #
 #
-path = "./a2c_cartpole_tensorboard/"
+path = "./sprint_1/"
 #
-model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=1, tensorboard_log=path, batch_size=128, learning_rate=0.0004)
-model.learn(total_timesteps=130000000, log_interval=10, progress_bar=True, callback=eval_callback) #6 deleted
+model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=1, tensorboard_log=path, batch_size=128, learning_rate=0.0004, policy_kwargs=policy_kwargs)
+model.learn(total_timesteps=130000000, log_interval=10, progress_bar=True) #6 deleted
+
+# callback = eval_callback
 #
 #
-# # log_dir = "stats/"
-model.save(f"sc_4_b_10_{now.strftime('%m-%d_%H-%M')}")
-# stats_path = os.path.join(log_dir, "vec_normalize_sc_3_b_1.pkl")
-# env.save(stats_path)
+log_dir = "stats/"
+model.save(f"sc_5_b_2_{now.strftime('%m-%d_%H-%M')}")
+stats_path = os.path.join(log_dir, "vec_normalize_sc_5_b_2.pkl")
+env.save(stats_path)
 
 #
-# env = make_vec_env("DVRPEnv-v0", n_envs=4, seed=1, vec_env_cls=DummyVecEnv)
-# env = VecNormalize.load(stats_path, env)
-model = MaskablePPO.load(f"sc_4_b_10_{now.strftime('%m-%d_%H-%M')}", env = env)
+env = make_vec_env("DVRPEnv-v0", n_envs=4, seed=1, vec_env_cls=DummyVecEnv)
+env = VecNormalize.load(stats_path, env)
+model = MaskablePPO.load(f"sc_5_b_2_{now.strftime('%m-%d_%H-%M')}", env = env)
 
 
 
@@ -126,7 +134,7 @@ model = MaskablePPO.load(f"sc_4_b_10_{now.strftime('%m-%d_%H-%M')}", env = env)
 # env.norm_reward = False
 
 
-mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=100)
+mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=1000)
 print(f"mean_reward={mean_reward:.2f} +/- {std_reward}")
 
 
