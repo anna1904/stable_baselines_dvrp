@@ -1,5 +1,6 @@
 # from .multiagentenv import MultiAgentEnv
 import gym
+import pandas as pd
 from gym import Env, spaces
 import json
 import random
@@ -54,7 +55,6 @@ class DVRPEnv(gym.Env):
             if key not in env_config:
                 env_config[key] = val
 
-        np.random.seed(1)  # random seed
         assert len(self.order_probs_per_zone) == self.num_zones
 
         self.__draw_base_img()
@@ -106,11 +106,18 @@ class DVRPEnv(gym.Env):
         self._step_count = 0
         self.clock = 0
 
+        self.experiment_index = 0
+
         # Vehicle parameters
         self.vehicles_action_history = []
         self._successful_delivery = 0
         self._total_accepted_orders = 0
-        self._total_delivered_orders = 0
+        self._total_delivered_reward = 0
+        self.total_evaluation_reward = 0
+        self.total_evaluation_rewards = np.array([0 for i in range(1000)])
+
+
+
         self._total_delivered_orders_zone = [0, 0, 0, 0]
         self._total_rejected_orders = 0
         self._total_depot_visits = 0
@@ -220,10 +227,12 @@ class DVRPEnv(gym.Env):
             relevant_order_index = self.current_order_id
             self._total_accepted_orders += 1
             self.reset_received_order()
+            self.stats_decision.append(action)
         elif action == 2:  # Reject# an order
             action_type = 'reject'
             relevant_order_index = self.current_order_id
             self._total_rejected_orders += 1
+            self.stats_decision.append(action)
         elif action == 3:  # Return to a depot
             action_type = 'depot'
             b = [self.depot_location[0], self.depot_location[1]]
@@ -247,13 +256,14 @@ class DVRPEnv(gym.Env):
             self.clock += 1
         if self.clock >= self.episode_length:
             done = True
-            # print('total_accepted_order == ', self._total_accepted_orders)
-            # print('total_rejected_orders == ', self._total_rejected_orders)
-            # print('total_delivered_orders == ', self._total_delivered_orders)
-            # print('total_delivered_orders_zone == ', self._total_delivered_orders_zone)
-            # print('total_depot_visits == ', self._total_depot_visits)
-            # print('state', state)
-            # print('total_reward', self.total_reward)
+
+            df = pd.DataFrame({"X": self.stats_x, "Y": self.stats_y, "Zone": self.stats_zone, "Reward": self.stats_reward, "Time": self.stats_clock, "Decision" : self.stats_decision, "Total": self._total_delivered_reward})
+            df.to_csv(f"instances/{self.experiment_index}.csv", index = False)
+            self.total_evaluation_reward += self._total_delivered_reward
+            self.total_evaluation_rewards[self.experiment_index-1] = self._total_delivered_reward
+            df_2 = pd.DataFrame({"Rewards": self.total_evaluation_rewards})
+            df_2.to_csv("instances/total_rewards.csv", index=False)
+
             for o in range(self.n_orders):
                 if self.o_status[o] >= 2:
                     self.reward = (self.reward - self.reward_per_order[o] * (
@@ -302,7 +312,7 @@ class DVRPEnv(gym.Env):
                 # If order is available and driver is at delivery location, deliver the order
                 if self.o_status[o] == 2 and (self.dr_x == self.o_x[o] and self.dr_y == self.o_y[o]):
                     if self.dr_left_capacity >= 1:
-                        self._total_delivered_orders += 1
+                        self._total_delivered_reward += self.reward_per_order[o]
                         self._update_statistics(self.o_x[o])
                         self.o_delivered[o] = 1
                         if self.o_time[o] <= self.order_promise:
@@ -382,6 +392,11 @@ class DVRPEnv(gym.Env):
                     self.reward_per_order[o] = order_reward
                     self.zones_order[o] = zone + 1
                     self.acceptance_decision = 1
+                    self.stats_x.append(o_x)
+                    self.stats_y.append(o_y)
+                    self.stats_zone.append(zone+1)
+                    self.stats_reward.append(order_reward)
+                    self.stats_clock.append(self.clock)
                     # self.closest_distance_node = abs(self.dr_x - o_x) + abs(self.dr_y - o_y)
                 break
             # generate missed order
@@ -424,7 +439,7 @@ class DVRPEnv(gym.Env):
         # \
         #self.zones_order
         # if self.acceptance_decision == 1:
-            return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status +self.reward_per_order + self.o_time +
+            return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order + self.o_time +
                         [self.dr_left_capacity] + [self.clock])
         # else:
         #     return np.array(
@@ -460,6 +475,14 @@ class DVRPEnv(gym.Env):
 
         # General parameters (changes throughout episode)
         self.clock = 0
+        self.stats_x = []
+        self.stats_y = []
+        self.stats_zone = []
+        self.stats_reward = []
+        self.stats_clock = []
+        self.stats_decision = []
+        self.experiment_index += 1
+        self._total_delivered_reward = 0
 
         self.__place_driver()
         self.dr_used_capacity = 0
@@ -476,7 +499,6 @@ class DVRPEnv(gym.Env):
         self.total_reward = 0
 
         self._total_accepted_orders = 0
-        self._total_delivered_orders = 0
         self._total_delivered_orders_zone = [0, 0, 0, 0]
         self._total_rejected_orders = 0
         self._total_depot_visits = 0
@@ -486,17 +508,6 @@ class DVRPEnv(gym.Env):
         self.closest_distance_node = 0
 
         return self.__create_state()
-
-    def __generate_order(self):
-        self._total_appeared_orders += 1
-        while True:
-            np.random.seed()
-            order_x = np.random.randint(self._grid_shape[0])
-            order_y = np.random.randint(self._grid_shape[1])
-            if (order_x, order_y) != self.depot_location:
-                break
-
-        return order_x, order_y
 
     def render(self, mode='human', close=False):
 
