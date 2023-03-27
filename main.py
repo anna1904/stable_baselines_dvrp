@@ -78,8 +78,12 @@ from stable_baselines3 import PPO
 #sc_4_b_10 wihout zones but with distance how far away from the closest in routing PPO47 rs = 2, 0 if no orders to deliver,
 
 #After meeting
-#sc_5_b_1 with normalization standard scenario rs=1
-#sc_5_b_2 with normalization standard scenario rs=1, 512 512
+#sc_5_b_1 with normalization standard scenario rs=1, n = 5, p = 30 PPO2
+#sc_5_b_2 with normalization standard scenario rs=1, 512 512 p = 30, n = 5 (not finished, too long) PPO3
+#sc_5_b_3 with normalization standard scenario rs=1, 256 256, n = 15, p = 20 (not finished, too long) PPO4
+#sc_5_b_3 with normalization standard scenario rs=1, 128 128, n = 10, p = 25 PPO5
+#sc_5_b_4 with normalization standard scenario rs=2, 128 128, n = 10, p = 25 PP06
+#sc_5_b_5 with normalization standard scenario rs=3, 128 128, n = 10, p = 25 PPO7
 
 #remove locations
 #give 2 regions with large reward far away
@@ -95,13 +99,13 @@ register(
     entry_point='dvrp_env:DVRPEnv', #your_env_folder.envs:NameOfYourEnv
 )
 
-env = make_vec_env("DVRPEnv-v0", n_envs=4, seed=1, vec_env_cls=DummyVecEnv)
+env = make_vec_env("DVRPEnv-v0", n_envs=4, seed=2, vec_env_cls=DummyVecEnv)
 env = VecNormalize(env, training=True, norm_obs=True, clip_obs=481., norm_reward = True, clip_reward=70.)
-set_random_seed(1)
+set_random_seed(3)
 #
 #
 policy_kwargs = dict(activation_fn=th.nn.ReLU,
-                     net_arch=dict(pi=[512, 512], vf=[512, 512]))
+                     net_arch=dict(pi=[128, 128], vf=[128, 128]))
 #
 # eval_callback = MaskableEvalCallback(env, best_model_save_path=f"./best_sc_4_b_10_{now.strftime('%m-%d_%H-%M')}/",
 #                              log_path='./logs/', eval_freq=100000, n_eval_episodes=100,
@@ -111,20 +115,20 @@ policy_kwargs = dict(activation_fn=th.nn.ReLU,
 path = "./sprint_1/"
 #
 model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=1, tensorboard_log=path, batch_size=128, learning_rate=0.0004, policy_kwargs=policy_kwargs)
-model.learn(total_timesteps=130000000, log_interval=10, progress_bar=True) #6 deleted
+model.learn(total_timesteps=110000000, log_interval=10, progress_bar=True) #6 deleted 000000
 
 # callback = eval_callback
 #
 #
-log_dir = "stats/"
-model.save(f"sc_5_b_2_{now.strftime('%m-%d_%H-%M')}")
-stats_path = os.path.join(log_dir, "vec_normalize_sc_5_b_2.pkl")
+log_dir = "./stats/"
+model.save(f"sc_5_b_5_{now.strftime('%m-%d_%H-%M')}")
+stats_path = os.path.join(log_dir, "vec_normalize_sc_5_b_5.pkl")
 env.save(stats_path)
 
 #
 env = make_vec_env("DVRPEnv-v0", n_envs=4, seed=1, vec_env_cls=DummyVecEnv)
 env = VecNormalize.load(stats_path, env)
-model = MaskablePPO.load(f"sc_5_b_2_{now.strftime('%m-%d_%H-%M')}", env = env)
+model = MaskablePPO.load(f"sc_5_b_5_{now.strftime('%m-%d_%H-%M')}", env = env)
 
 
 

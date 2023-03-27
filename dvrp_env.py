@@ -30,11 +30,11 @@ from typing import List, Optional
 
 
 class DVRPEnv(gym.Env):
-    def __init__(self, episode_limit=100, grid_shape=(10, 10), env_config={}):
+    def __init__(self, episode_limit=480, grid_shape=(10, 10), env_config={}):
         config_defaults = {
-            'n_orders': 5,
-            'order_prob': 0.3,
-            'driver_capacity': 5,
+            'n_orders': 10,
+            'order_prob': 0.25,
+            'driver_capacity': 10,
             'map_quad': (10, 10),
             'order_promise': 60,
             'order_timeout_prob': 0.15,
