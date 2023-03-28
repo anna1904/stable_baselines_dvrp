@@ -84,6 +84,7 @@ from stable_baselines3 import PPO
 #sc_5_b_3 with normalization standard scenario rs=1, 128 128, n = 10, p = 25 PPO5
 #sc_5_b_4 with normalization standard scenario rs=2, 128 128, n = 10, p = 25 PP06
 #sc_5_b_5 with normalization standard scenario rs=3, 128 128, n = 10, p = 25 PPO7
+#sc_5_b_6 with normalization standard scenario rs=4, 128 128, n = 10, p = 25 PPO8
 
 #remove locations
 #give 2 regions with large reward far away
@@ -92,16 +93,15 @@ from stable_baselines3 import PPO
 #large reward order are not often there
 #fquency (increase)
 #give distance how far away from the closest
-#normalize whatever
 
 register(
     id='DVRPEnv-v0',
     entry_point='dvrp_env:DVRPEnv', #your_env_folder.envs:NameOfYourEnv
 )
 
-env = make_vec_env("DVRPEnv-v0", n_envs=4, seed=10, vec_env_cls=DummyVecEnv)
+env = make_vec_env("DVRPEnv-v0", n_envs=4, seed=4, vec_env_cls=DummyVecEnv)
 env = VecNormalize(env, training=True, norm_obs=True, clip_obs=481., norm_reward = True, clip_reward=70.)
-set_random_seed(10)
+set_random_seed(4)
 #
 #
 policy_kwargs = dict(activation_fn=th.nn.ReLU,
@@ -119,22 +119,23 @@ path = "./sprint_1/"
 
 
 log_dir = "./stats/"
-# model.save(f"sc_5_b_10_{now.strftime('%m-%d_%H-%M')}")
-stats_path = os.path.join(log_dir, "vec_normalize_sc_5_b_5.pkl")
+# model.save(f"sc_5_b_6_{now.strftime('%m-%d_%H-%M')}")
+stats_path = os.path.join(log_dir, f"vec_normalize_sc_5_b_6_{now.strftime('%m-%d_%H-%M')}.pkl")
+stats_path = os.path.join(log_dir, f"vec_normalize_sc_5_b_6_{now.strftime('%m-%d_%H-%M')}.pkl")
 # env.save(stats_path)
 
-#
+#EVALUATION
 env_my = gym.make("DVRPEnv-v0")
 env_my = DummyVecEnv([lambda: env_my])
 env_my = VecNormalize.load(stats_path, env_my)
 env_my.training = False
 env_my.norm_reward = False
-# model = MaskablePPO.load(f"sc_5_b_5_{now.strftime('%m-%d_%H-%M')}", env = env)
-model = MaskablePPO.load(f"sc_5_b_5_03-26_13-56", env = env_my)
+model = MaskablePPO.load(f"sc_5_b_6_{now.strftime('%m-%d_%H-%M')}", env = env)
 
-
-mean_reward, std_reward = evaluate_policy(model, env_my, n_eval_episodes=1000)
+mean_reward, std_reward = evaluate_policy(model, env_my, n_eval_episodes=100)
 print(f"mean_reward={mean_reward:.2f} +/- {std_reward}")
+
+##EVALUATION
 
 
 # vec_env = model.get_env()
