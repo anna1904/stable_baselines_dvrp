@@ -260,11 +260,11 @@ class DVRPEnv(gym.Env):
 
             ##EVALUATION
             # df = pd.DataFrame({"X": self.stats_x, "Y": self.stats_y, "Zone": self.stats_zone, "Reward": self.stats_reward, "Time": self.stats_clock, "Decision" : self.stats_decision, "Total": self._total_delivered_reward})
-            # df.to_csv(f"instances/{self.experiment_index}.csv", index = False)
+            # df.to_csv(f"instances_sc5_b_5/{self.experiment_index}.csv", index = False)
             # self.total_evaluation_reward += self._total_delivered_reward
             # self.total_evaluation_rewards[self.experiment_index-1] = self._total_delivered_reward
             # df_2 = pd.DataFrame({"Rewards": self.total_evaluation_rewards})
-            # df_2.to_csv("instances/total_rewards.csv", index=False)
+            # df_2.to_csv("instances_sc5_b_5/total_rewards.csv", index=False)
 
             ##EVALUATION
 
@@ -316,10 +316,10 @@ class DVRPEnv(gym.Env):
                 # If order is available and driver is at delivery location, deliver the order
                 if self.o_status[o] == 2 and (self.dr_x == self.o_x[o] and self.dr_y == self.o_y[o]):
                     if self.dr_left_capacity >= 1:
-                        # self._total_delivered_reward += self.reward_per_order[o]
                         self._update_statistics(self.o_x[o])
                         self.o_delivered[o] = 1
                         if self.o_time[o] <= self.order_promise:
+                            # self._total_delivered_reward += self.reward_per_order[o]
                             self.reward += 2 * self.reward_per_order[
                                 o] / 3  # Rest of the reward was given in accept and deliver
                         self.dr_left_capacity -= 1
