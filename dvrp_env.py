@@ -263,13 +263,12 @@ class DVRPEnv(gym.Env):
             # df = pd.DataFrame({"X": self.stats_x, "Y": self.stats_y, "Zone": self.stats_zone, "Reward": self.stats_reward, "Time": self.stats_clock})
             # df.to_csv(f"instances_test/{self.experiment_index}.csv", index = False)
             # length = len(df["X"])
-            # self.total_length[self.experiment_index - 1] = length
-            # df_2 = pd.DataFrame({"Length": self.total_length})
-            # df_2.to_csv("instances_test/total_length.csv", index=False)
+            self.total_length[self.experiment_index - 1] = self.evaluation_order
             # self.total_evaluation_reward += self._total_delivered_reward
-            # self.total_evaluation_rewards[self.experiment_index-1] = self._total_delivered_reward
-            # df_2 = pd.DataFrame({"Rewards": self.total_evaluation_rewards})
-            # df_2.to_csv("instances_test/total_rewards.csv", index=False)
+            self.total_evaluation_rewards[self.experiment_index-1] = self._total_delivered_reward
+            if (self.experiment_index == 1000):
+                df_2 = pd.DataFrame({"Rewards": self.total_evaluation_rewards, "Length": self.total_length})
+                df_2.to_csv("evaluation_rs/rs_4.csv", index=False)
 
             ##EVALUATION
 
@@ -324,7 +323,7 @@ class DVRPEnv(gym.Env):
                         self._update_statistics(self.o_x[o])
                         self.o_delivered[o] = 1
                         if self.o_time[o] <= self.order_promise:
-                            # self._total_delivered_reward += self.reward_per_order[o]
+                            self._total_delivered_reward += self.reward_per_order[o]
                             self.reward += 2 * self.reward_per_order[
                                 o] / 3  # Rest of the reward was given in accept and deliver
                         self.dr_left_capacity -= 1
@@ -395,6 +394,9 @@ class DVRPEnv(gym.Env):
                 except:
                     time = 0
 
+                if (time < self.clock and time != 0):
+                    print("Attention")
+
                 if (time == self.clock):
                     self.current_order_id = o
                     self.o_status[o] = 1
@@ -405,8 +407,8 @@ class DVRPEnv(gym.Env):
                     self.zones_order[o] = zone_taken
                     self.acceptance_decision = 1
                     self.evaluation_order += 1
-                    print(self.evaluation_order)
-                    print(o_x, o_y, time)
+                    # print(self.evaluation_order)
+                    # print(o_x, o_y, time)
                 # if np.random.random(1)[0] < self.order_prob:
                 #     self.current_order_id = o
                 #     # Choose a zone
@@ -519,7 +521,10 @@ class DVRPEnv(gym.Env):
         self._total_delivered_reward = 0
         self.evaluation = True
         if self.evaluation:
-            self.test_dataframe = pd.read_csv(f'instances_test/{self.experiment_index}.csv')
+            try:
+                self.test_dataframe = pd.read_csv(f'instances_test/{self.experiment_index}.csv')
+            except:
+                print("No file anymores")
         self.evaluation_order = 0
 
         self.__place_driver()

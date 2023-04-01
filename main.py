@@ -126,7 +126,7 @@ path = "./sprint_1/"
 log_dir = "./stats/"
 # model.save(f"sc_5_b_10_{now.strftime('%m-%d_%H-%M')}")
 # stats_path = os.path.join(log_dir, f"vec_normalize_sc_5_b_10_{now.strftime('%m-%d_%H-%M')}.pkl")
-stats_path = os.path.join(log_dir, f"vec_normalize_sc_5_b_5.pkl")
+stats_path = os.path.join(log_dir, f"vec_normalize_sc_5_b_6_03-27_23-03.pkl")
 # env.save(stats_path)
 
 #EVALUATION
@@ -135,10 +135,10 @@ env_my = DummyVecEnv([lambda: env_my])
 env_my = VecNormalize.load(stats_path, env_my)
 env_my.training = False
 env_my.norm_reward = False
-model = MaskablePPO.load("sc_5_b_5_03-26_13-56", env = env_my)
+model = MaskablePPO.load("sc_5_b_6_03-27_23-03", env = env_my)
 # model = MaskablePPO.load(f"sc_5_b_10_{now.strftime('%m-%d_%H-%M')}", env = env)
 
-mean_reward, std_reward = evaluate_policy(model, env_my, n_eval_episodes=1)
+mean_reward, std_reward = evaluate_policy(model, env_my, n_eval_episodes=1000)
 print(f"mean_reward={mean_reward:.2f} +/- {std_reward}")
 
 ##EVALUATION
