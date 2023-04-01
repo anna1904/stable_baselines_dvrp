@@ -112,10 +112,11 @@ class DVRPEnv(gym.Env):
         self._successful_delivery = 0
         self._total_accepted_orders = 0
 
-        # self._total_delivered_reward = 0
-        # self.total_evaluation_reward = 0
-        # self.experiment_index = 0
-        # self.total_evaluation_rewards = np.array([0 for i in range(1000)])
+        self._total_delivered_reward = 0
+        self.total_evaluation_reward = 0
+        self.experiment_index = 0
+        self.total_evaluation_rewards = np.array([0 for i in range(1000)])
+        self.total_length = np.array([0 for i in range(1000)])
 
 
 
@@ -159,7 +160,7 @@ class DVRPEnv(gym.Env):
 
         # time elapsed since the order has been placed
         o_time_min = [0] * self.n_orders
-        o_time_max = [self.order_promise] * self.n_orders
+        o_time_max = [60] * self.n_orders
 
         reward_per_order_min = [0] * self.n_orders
         reward_per_order_max = [max(self.order_reward_max)] * self.n_orders
@@ -259,12 +260,16 @@ class DVRPEnv(gym.Env):
             done = True
 
             ##EVALUATION
-            # df = pd.DataFrame({"X": self.stats_x, "Y": self.stats_y, "Zone": self.stats_zone, "Reward": self.stats_reward, "Time": self.stats_clock, "Decision" : self.stats_decision, "Total": self._total_delivered_reward})
-            # df.to_csv(f"instances_sc5_b_5/{self.experiment_index}.csv", index = False)
+            # df = pd.DataFrame({"X": self.stats_x, "Y": self.stats_y, "Zone": self.stats_zone, "Reward": self.stats_reward, "Time": self.stats_clock})
+            # df.to_csv(f"instances_test/{self.experiment_index}.csv", index = False)
+            # length = len(df["X"])
+            # self.total_length[self.experiment_index - 1] = length
+            # df_2 = pd.DataFrame({"Length": self.total_length})
+            # df_2.to_csv("instances_test/total_length.csv", index=False)
             # self.total_evaluation_reward += self._total_delivered_reward
             # self.total_evaluation_rewards[self.experiment_index-1] = self._total_delivered_reward
             # df_2 = pd.DataFrame({"Rewards": self.total_evaluation_rewards})
-            # df_2.to_csv("instances_sc5_b_5/total_rewards.csv", index=False)
+            # df_2.to_csv("instances_test/total_rewards.csv", index=False)
 
             ##EVALUATION
 
@@ -384,20 +389,41 @@ class DVRPEnv(gym.Env):
         for o in range(self.n_orders):
             if self.o_status[o] == 0:
                 # Flip a coin to create an order
-                if np.random.random(1)[0] < self.order_prob:
+                try:
+                    df_row = self.test_dataframe.iloc[self.evaluation_order]
+                    o_x, o_y, zone_taken, order_reward, time = df_row.astype(float)
+                except:
+                    time = 0
+
+                if (time == self.clock):
                     self.current_order_id = o
-                    # Choose a zone
-                    zone = np.random.choice(self.num_zones, p=self.order_probs_per_zone)
-                    o_x, o_y, order_reward = self.__receive_order(zone)
                     self.o_status[o] = 1
                     self.o_time[o] = 0
                     self.o_x[o] = o_x
                     self.o_y[o] = o_y
                     self.reward_per_order[o] = order_reward
-                    self.zones_order[o] = zone + 1
+                    self.zones_order[o] = zone_taken
                     self.acceptance_decision = 1
+                    self.evaluation_order += 1
+                    print(self.evaluation_order)
+                    print(o_x, o_y, time)
+                # if np.random.random(1)[0] < self.order_prob:
+                #     self.current_order_id = o
+                #     # Choose a zone
+                #     zone = np.random.choice(self.num_zones, p=self.order_probs_per_zone)
+                #     o_x, o_y, order_reward = self.__receive_order(zone)
+                #     print(o_x, o_y, order_reward)
+                #     self.o_status[o] = 1
+                #     self.o_time[o] = 0
+                #     self.o_x[o] = o_x
+                #     self.o_y[o] = o_y
+                #     self.reward_per_order[o] = order_reward
+                #     self.zones_order[o] = zone
+                #     self.acceptance_decision = 1
+                #     self.evaluation_order += 1
+                #     print(self.evaluation_order)
 
-                    ##Evaluation
+                    # ##Evaluation
                     # self.stats_x.append(o_x)
                     # self.stats_y.append(o_y)
                     # self.stats_zone.append(zone+1)
@@ -483,14 +509,18 @@ class DVRPEnv(gym.Env):
         # General parameters (changes throughout episode)
         self.clock = 0
         ##Evaluation
-        # self.stats_x = []
-        # self.stats_y = []
-        # self.stats_zone = []
-        # self.stats_reward = []
-        # self.stats_clock = []
+        self.stats_x = []
+        self.stats_y = []
+        self.stats_zone = []
+        self.stats_reward = []
+        self.stats_clock = []
         # self.stats_decision = []
-        # self.experiment_index += 1
-        # self._total_delivered_reward = 0
+        self.experiment_index += 1
+        self._total_delivered_reward = 0
+        self.evaluation = True
+        if self.evaluation:
+            self.test_dataframe = pd.read_csv(f'instances_test/{self.experiment_index}.csv')
+        self.evaluation_order = 0
 
         self.__place_driver()
         self.dr_used_capacity = 0
