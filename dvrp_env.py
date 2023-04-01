@@ -268,7 +268,7 @@ class DVRPEnv(gym.Env):
             self.total_evaluation_rewards[self.experiment_index-1] = self._total_delivered_reward
             if (self.experiment_index == 1000):
                 df_2 = pd.DataFrame({"Rewards": self.total_evaluation_rewards, "Length": self.total_length})
-                df_2.to_csv("evaluation_rs/rs_4.csv", index=False)
+                df_2.to_csv("evaluation_rs/rs_1.csv", index=False)
 
             ##EVALUATION
 
