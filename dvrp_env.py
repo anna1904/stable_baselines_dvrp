@@ -173,7 +173,7 @@ class DVRPEnv(gym.Env):
                                   [self.vehicle_x_max] * self.n_orders +
                                    [self.vehicle_y_max] * self.n_orders+
                                   [2] * self.n_orders +
-                                  [4] * self.n_orders +
+                                  # [4] * self.n_orders +
                                   reward_per_order_max +
                                   o_time_max +
                                   [self.driver_capacity] +
@@ -184,7 +184,7 @@ class DVRPEnv(gym.Env):
                                  [self.vehicle_x_min] * self.n_orders +
                                  [self.vehicle_y_min] * self.n_orders +
                                  [0] * self.n_orders +
-                                 [0] * self.n_orders +
+                                 # [0] * self.n_orders +
                                  reward_per_order_min +
                                  o_time_min +
                                  [0] +
@@ -444,11 +444,15 @@ class DVRPEnv(gym.Env):
     def __create_state(self):
 
         # \
+        return np.array(
+            [self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order + self.o_time +
+            [self.dr_left_capacity]  + [self.clock])
+
         #self.zones_order
         # if self.acceptance_decision == 1:
-        # self.o_x + self.o_y
-            return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.zones_order + self.reward_per_order + self.o_time +
-                        [self.dr_left_capacity] + [self.clock])
+        # # self.o_x + self.o_y
+        #     return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order + self.o_time +
+        #                 [self.dr_left_capacity] + [0] + [self.clock])
         # else:
         #     return np.array(
         #         [self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order + self.o_time +
