@@ -139,8 +139,8 @@ env_my = make_vec_env("DVRPEnv-v0", n_envs=4, seed=7, vec_env_cls=DummyVecEnv)
 env_my = VecNormalize.load(stats_path, env_my)
 model = MaskablePPO.load(f"sc_6_b_5_04-05_18-54", env = env_my)
 model.learn(total_timesteps=100000000, log_interval=10, reset_num_timesteps=False)
-model.save(f"sc_6_b_4_{now.strftime('%m-%d_%H-%M')}")
-env_my.save(os.path.join(log_dir, f"vec_normalize_sc_6_b_4_{now.strftime('%m-%d_%H-%M')}.pkl"))
+model.save(f"sc_6_b_5_{now.strftime('%m-%d_%H-%M')}")
+env_my.save(os.path.join(log_dir, f"vec_normalize_sc_6_b_5_{now.strftime('%m-%d_%H-%M')}.pkl"))
 
 
 
