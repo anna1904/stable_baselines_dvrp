@@ -99,7 +99,8 @@ from stable_baselines3 import PPO
 #sc_6_b_5 with normalization wit locations and closest location, rs = 7, 128 128, n = 10, p = 25 PP04
 #sc_6_b_6 with normalization wit locations and closest location, rs = 7, 128 128, n = 10, p = 25 PP04
 
-#sc_8_b_1 with normalization wit locations and closest location, rs = 7, 128 128, n = 10, p = 25 PP05
+#sc_8_b_1 with normalization wit locations, one hot encoding rs = 6, 128 128, n = 10, p = 25 PP015
+#sc_8_b_2 with normalization wit locations,grid map,  rs = 6, 128 128, n = 10, p = 25 PP016
 
 #remove locations
 #give 2 regions with large reward far away
@@ -134,8 +135,8 @@ model.learn(total_timesteps=110000000, log_interval=10, progress_bar=True) #
 #
 #
 log_dir = "./stats/"
-model.save(f"sc_8_b_1_{now.strftime('%m-%d_%H-%M')}")
-stats_path = os.path.join(log_dir, f"vec_normalize_sc_8_b_1_{now.strftime('%m-%d_%H-%M')}.pkl")
+model.save(f"sc_8_b_2_{now.strftime('%m-%d_%H-%M')}")
+stats_path = os.path.join(log_dir, f"vec_normalize_sc_8_b_2_{now.strftime('%m-%d_%H-%M')}.pkl")
 env.save(stats_path)
 
 # env_my = make_vec_env("DVRPEnv-v0", n_envs=4, seed=1, vec_env_cls=DummyVecEnv)
@@ -153,7 +154,7 @@ env_my = DummyVecEnv([lambda: env])
 env_my = VecNormalize.load(stats_path, env_my)
 env_my.training = False
 env_my.norm_reward = False
-model = MaskablePPO.load(f"sc_8_b_1_{now.strftime('%m-%d_%H-%M')}", env = env)
+model = MaskablePPO.load(f"sc_8_b_2_{now.strftime('%m-%d_%H-%M')}", env = env)
 
 mean_reward, std_reward = evaluate_policy(model, env_my, n_eval_episodes=100)
 print(f"mean_reward={mean_reward:.2f} +/- {std_reward}")

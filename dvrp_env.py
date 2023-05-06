@@ -169,22 +169,16 @@ class DVRPEnv(gym.Env):
         self.closest_distance = 0
         self.closest_distance_node = 0
 
-        self._obs_high = np.array([self.vehicle_x_max, self.vehicle_y_max] +
-                                  [self.vehicle_x_max] * self.n_orders +
-                                   [self.vehicle_y_max] * self.n_orders+
-                                  [1] * 30 +
-                                  # [4] * self.n_orders +
+        self._obs_high = np.array([2] * 100 +
+                                  [2] * self.n_orders +
                                   reward_per_order_max +
                                   o_time_max +
                                   [self.driver_capacity] +
                                   # [18] +
                                   [self.clock_max])
 
-        self._obs_low = np.array([self.vehicle_x_min, self.vehicle_y_min] +
-                                 [self.vehicle_x_min] * self.n_orders +
-                                 [self.vehicle_y_min] * self.n_orders +
-                                 [0] * 30 +
-                                 # [0] * self.n_orders +
+        self._obs_low = np.array([0] * 100 +
+                                 [0] * self.n_orders +
                                  reward_per_order_min +
                                  o_time_min +
                                  [0] +
@@ -351,8 +345,8 @@ class DVRPEnv(gym.Env):
         self.o_status[order_num] = 0
         self.o_time[order_num] = 0
         self.o_res_map[order_num] = -1
-        self.o_x[order_num] = 0
-        self.o_y[order_num] = 0
+        self.o_x[order_num] = -1
+        self.o_y[order_num] = -1
         self.o_delivered[order_num] = 0
         self.reward_per_order[order_num] = 0
         self.reset_received_order()
@@ -445,6 +439,14 @@ class DVRPEnv(gym.Env):
         num_categories = 3
         statuses = np.eye(num_categories)[o_status]
         return statuses
+    def grid_locations(self, dr_x, dr_y, o_x, o_y):
+        grid = np.zeros(self._grid_shape, dtype='int32')
+        grid[dr_x][dr_y] = 1
+        for i in range(self.n_orders):
+            if o_x[i] != -1:
+                grid[o_x[i]][o_y[i]] = 2
+        return grid
+
 
     def __create_state(self):
 
@@ -455,9 +457,9 @@ class DVRPEnv(gym.Env):
         #     return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order + self.o_time +
         #                 [self.dr_left_capacity] + [0] + [self.clock])
         # else:
-        statuses = self.order_status_encoding(self.o_status)
-        return np.array(
-                [self.dr_x] + [self.dr_y] + self.o_x + self.o_y + statuses.flatten().tolist() + self.reward_per_order + self.o_time +
+
+        grid = self.grid_locations(self.dr_x, self.dr_y, self.o_x, self.o_y)
+        return np.array(grid.flatten.tolist() + self.o_status + self.reward_per_order + self.o_time +
                 [self.dr_left_capacity] + [self.clock])
 
     def valid_action_mask(self):
@@ -501,8 +503,8 @@ class DVRPEnv(gym.Env):
 
         self.__place_driver()
         self.dr_used_capacity = 0
-        self.o_x = [0] * self.n_orders
-        self.o_y = [0] * self.n_orders
+        self.o_x = [-1] * self.n_orders
+        self.o_y = [-1] * self.n_orders
         self.o_status = [0] * self.n_orders
         self.o_delivered = [0] * self.n_orders
         self.zones_order = [0] * self.n_orders
