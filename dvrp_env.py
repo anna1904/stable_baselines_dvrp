@@ -64,7 +64,6 @@ class DVRPEnv(gym.Env):
         self.o_x = []
         self.o_y = []
         self.o_status = []
-        self.o_res_map = []
         self.o_time = []
         self.reward_per_order = []
 
@@ -169,20 +168,24 @@ class DVRPEnv(gym.Env):
         self.closest_distance = 0
         self.closest_distance_node = 0
 
-        self._obs_high = np.array([2] * 100 +
+        self._obs_high = np.array([self.vehicle_x_max, self.vehicle_y_max] +
+                                  [self.vehicle_x_max] * self.n_orders +
+                                   [self.vehicle_y_max] * self.n_orders+
                                   [2] * self.n_orders +
                                   reward_per_order_max +
                                   o_time_max +
+                                  reward_per_order_max +
                                   [self.driver_capacity] +
-                                  # [18] +
                                   [self.clock_max])
 
-        self._obs_low = np.array([0] * 100 +
+        self._obs_low = np.array([self.vehicle_x_min, self.vehicle_y_min] +
+                                 [self.vehicle_x_min] * self.n_orders +
+                                 [self.vehicle_y_min] * self.n_orders +
                                  [0] * self.n_orders +
                                  reward_per_order_min +
                                  o_time_min +
+                                 [0] * self.n_orders +
                                  [0] +
-                                 # [0] +
                                  [0]
                                  )
         # [self.vehicle_x_min, self.vehicle_y_max] #the last is the location to which agent is moving
@@ -344,9 +347,8 @@ class DVRPEnv(gym.Env):
     def __reset_order(self, order_num):
         self.o_status[order_num] = 0
         self.o_time[order_num] = 0
-        self.o_res_map[order_num] = -1
-        self.o_x[order_num] = -1
-        self.o_y[order_num] = -1
+        self.o_x[order_num] = 0
+        self.o_y[order_num] = 0
         self.o_delivered[order_num] = 0
         self.reward_per_order[order_num] = 0
         self.reset_received_order()
@@ -446,7 +448,12 @@ class DVRPEnv(gym.Env):
             if o_x[i] != -1:
                 grid[o_x[i]][o_y[i]] = 2
         return grid
-
+    def reward_to_time_ratio(self, reward_per_order, o_time):
+        ratio = [0] * self.n_orders
+        for i in range(self.n_orders):
+            if reward_per_order[i] != 0:
+                ratio[i] = reward_per_order[i]/(self.order_promise - o_time[i])
+        return ratio
 
     def __create_state(self):
 
@@ -457,9 +464,10 @@ class DVRPEnv(gym.Env):
         #     return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order + self.o_time +
         #                 [self.dr_left_capacity] + [0] + [self.clock])
         # else:
-
-        grid = self.grid_locations(self.dr_x, self.dr_y, self.o_x, self.o_y)
-        return np.array(grid.flatten.tolist() + self.o_status + self.reward_per_order + self.o_time +
+        statuses = self.order_status_encoding(self.o_status)
+        ratio = self.reward_to_time_ratio(self.reward_per_order, self.o_time)
+        return np.array(
+                [self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order + self.o_time + ratio +
                 [self.dr_left_capacity] + [self.clock])
 
     def valid_action_mask(self):
@@ -503,12 +511,11 @@ class DVRPEnv(gym.Env):
 
         self.__place_driver()
         self.dr_used_capacity = 0
-        self.o_x = [-1] * self.n_orders
-        self.o_y = [-1] * self.n_orders
+        self.o_x = [0] * self.n_orders
+        self.o_y = [0] * self.n_orders
         self.o_status = [0] * self.n_orders
         self.o_delivered = [0] * self.n_orders
         self.zones_order = [0] * self.n_orders
-        self.o_res_map = [-1] * self.n_orders
         self.o_time = [0] * self.n_orders
         self.reward_per_order = [0] * self.n_orders
         self.acceptance_decision = 0

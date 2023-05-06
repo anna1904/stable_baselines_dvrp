@@ -101,6 +101,7 @@ from stable_baselines3 import PPO
 
 #sc_8_b_1 with normalization wit locations, one hot encoding rs = 6, 128 128, n = 10, p = 25 PP015
 #sc_8_b_2 with normalization wit locations,grid map,  rs = 6, 128 128, n = 10, p = 25 PP016
+#sc_8_b_2 with normalization wit locations,ratio reward/time_left,  rs = 6, 128 128, n = 10, p = 25 PP017
 
 #remove locations
 #give 2 regions with large reward far away
@@ -130,7 +131,8 @@ policy_kwargs = dict(activation_fn=th.nn.ReLU,
 #
 path = "./sprint_2/"
 #
-model = MaskablePPO(MaskableActorCriticPolicy, env, verbose=1, tensorboard_log=path, batch_size=128, learning_rate=0.0004, policy_kwargs=policy_kwargs)
+#
+model = MaskablePPO(MaskableActorCriticPolicy, env, tensorboard_log=path, verbose=1, batch_size=128, learning_rate=0.0004, policy_kwargs=policy_kwargs)
 model.learn(total_timesteps=110000000, log_interval=10, progress_bar=True) #
 #
 #
