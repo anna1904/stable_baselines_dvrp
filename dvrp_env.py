@@ -172,7 +172,7 @@ class DVRPEnv(gym.Env):
         self._obs_high = np.array([self.vehicle_x_max, self.vehicle_y_max] +
                                   [self.vehicle_x_max] * self.n_orders +
                                    [self.vehicle_y_max] * self.n_orders+
-                                  [2] * self.n_orders +
+                                  [1] * 30 +
                                   # [4] * self.n_orders +
                                   reward_per_order_max +
                                   o_time_max +
@@ -183,7 +183,7 @@ class DVRPEnv(gym.Env):
         self._obs_low = np.array([self.vehicle_x_min, self.vehicle_y_min] +
                                  [self.vehicle_x_min] * self.n_orders +
                                  [self.vehicle_y_min] * self.n_orders +
-                                 [0] * self.n_orders +
+                                 [0] * 30 +
                                  # [0] * self.n_orders +
                                  reward_per_order_min +
                                  o_time_min +
@@ -441,6 +441,11 @@ class DVRPEnv(gym.Env):
         elif a == 4:  # RIGHT
             self.dr_x = min(self.map_max_x, self.dr_x + 1)
 
+    def order_status_encoding(self, o_status):
+        num_categories = 3
+        statuses = np.eye(num_categories)[o_status]
+        return statuses
+
     def __create_state(self):
 
         # [self.closest_distance]
@@ -450,8 +455,9 @@ class DVRPEnv(gym.Env):
         #     return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order + self.o_time +
         #                 [self.dr_left_capacity] + [0] + [self.clock])
         # else:
+        statuses = self.order_status_encoding(self.o_status)
         return np.array(
-                [self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order + self.o_time +
+                [self.dr_x] + [self.dr_y] + self.o_x + self.o_y + statuses.flatten().tolist() + self.reward_per_order + self.o_time +
                 [self.dr_left_capacity] + [self.clock])
 
     def valid_action_mask(self):
