@@ -64,6 +64,7 @@ class DVRPEnv(gym.Env):
         self.o_x = []
         self.o_y = []
         self.o_status = []
+        self.o_res_map = []
         self.o_time = []
         self.reward_per_order = []
 
@@ -174,7 +175,6 @@ class DVRPEnv(gym.Env):
                                   [2] * self.n_orders +
                                   reward_per_order_max +
                                   o_time_max +
-                                  reward_per_order_max +
                                   [self.driver_capacity] +
                                   [self.clock_max])
 
@@ -182,9 +182,8 @@ class DVRPEnv(gym.Env):
                                  [self.vehicle_x_min] * self.n_orders +
                                  [self.vehicle_y_min] * self.n_orders +
                                  [0] * self.n_orders +
-                                 reward_per_order_min +
-                                 o_time_min +
                                  [0] * self.n_orders +
+                                 o_time_min +
                                  [0] +
                                  [0]
                                  )
@@ -467,7 +466,7 @@ class DVRPEnv(gym.Env):
         statuses = self.order_status_encoding(self.o_status)
         ratio = self.reward_to_time_ratio(self.reward_per_order, self.o_time)
         return np.array(
-                [self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order + self.o_time + ratio +
+                [self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + ratio + self.o_time +
                 [self.dr_left_capacity] + [self.clock])
 
     def valid_action_mask(self):

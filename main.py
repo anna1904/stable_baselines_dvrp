@@ -102,6 +102,7 @@ from stable_baselines3 import PPO
 #sc_8_b_1 with normalization wit locations, one hot encoding rs = 6, 128 128, n = 10, p = 25 PP015
 #sc_8_b_2 with normalization wit locations,grid map,  rs = 6, 128 128, n = 10, p = 25 PP016
 #sc_8_b_2 with normalization wit locations,ratio reward/time_left,  rs = 6, 128 128, n = 10, p = 25 PP017
+#sc_8_b_3 with normalization wit locations,ratio reward/time_left,  rs = 6, 128 128, n = 10, p = 25 PP018
 
 #remove locations
 #give 2 regions with large reward far away
@@ -130,17 +131,17 @@ policy_kwargs = dict(activation_fn=th.nn.ReLU,
 #
 #
 path = "./sprint_2/"
-#
-#
+
 model = MaskablePPO(MaskableActorCriticPolicy, env, tensorboard_log=path, verbose=1, batch_size=128, learning_rate=0.0004, policy_kwargs=policy_kwargs)
 model.learn(total_timesteps=110000000, log_interval=10, progress_bar=True) #
-#
-#
+
+
 log_dir = "./stats/"
-model.save(f"sc_8_b_2_{now.strftime('%m-%d_%H-%M')}")
-stats_path = os.path.join(log_dir, f"vec_normalize_sc_8_b_2_{now.strftime('%m-%d_%H-%M')}.pkl")
+model.save(f"sc_8_b_3_{now.strftime('%m-%d_%H-%M')}")
+stats_path = os.path.join(log_dir, f"vec_normalize_sc_8_b_3_{now.strftime('%m-%d_%H-%M')}.pkl")
 env.save(stats_path)
 
+#train more
 # env_my = make_vec_env("DVRPEnv-v0", n_envs=4, seed=1, vec_env_cls=DummyVecEnv)
 # env_my = VecNormalize.load(stats_path, env_my)
 # model = MaskablePPO.load(f"sc_5_b_9_03-29_21-16", env = env_my)
@@ -152,11 +153,12 @@ env.save(stats_path)
 
 #EVALUATION
 #
-env_my = DummyVecEnv([lambda: env])
+env_my = gym.make("DVRPEnv-v0")
+env_my = DummyVecEnv([lambda: env_my])
 env_my = VecNormalize.load(stats_path, env_my)
 env_my.training = False
 env_my.norm_reward = False
-model = MaskablePPO.load(f"sc_8_b_2_{now.strftime('%m-%d_%H-%M')}", env = env)
+model = MaskablePPO.load(f"sc_8_b_3_{now.strftime('%m-%d_%H-%M')}", env = env)
 
 mean_reward, std_reward = evaluate_policy(model, env_my, n_eval_episodes=100)
 print(f"mean_reward={mean_reward:.2f} +/- {std_reward}")
