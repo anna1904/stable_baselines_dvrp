@@ -175,15 +175,17 @@ class DVRPEnv(gym.Env):
                                   [2] * self.n_orders +
                                   reward_per_order_max +
                                   o_time_max +
-                                  [self.driver_capacity] +
+                                  [19] * self.n_orders +
+                                  [self.driver_capacity]+
                                   [self.clock_max])
 
         self._obs_low = np.array([self.vehicle_x_min, self.vehicle_y_min] +
                                  [self.vehicle_x_min] * self.n_orders +
                                  [self.vehicle_y_min] * self.n_orders +
                                  [0] * self.n_orders +
-                                 [0] * self.n_orders +
+                                 reward_per_order_min +
                                  o_time_min +
+                                 [19] * self.n_orders +
                                  [0] +
                                  [0]
                                  )
@@ -286,6 +288,13 @@ class DVRPEnv(gym.Env):
             self.closest_distance = closest_distance
         else:
             self.closest_distance = 0
+    def get_distance(self):
+        distance = [0] * self.n_orders
+        for i, status in enumerate(self.o_status):
+            if status == 2 or status == 1:
+                distance[i] = abs(self.dr_x - self.o_x[i]) + abs(self.dr_y - self.o_y[i])
+        return distance
+
 
     def __update_driver_parameters(self, action_type, translated_action, relevant_order_index):
         if action_type == 'wait':
@@ -463,11 +472,12 @@ class DVRPEnv(gym.Env):
         #     return np.array([self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order + self.o_time +
         #                 [self.dr_left_capacity] + [0] + [self.clock])
         # else:
-        statuses = self.order_status_encoding(self.o_status)
-        ratio = self.reward_to_time_ratio(self.reward_per_order, self.o_time)
+        # statuses = self.order_status_encoding(self.o_status)
+        # ratio = self.reward_to_time_ratio(self.reward_per_order, self.o_time)
+        distance = self.get_distance()
         return np.array(
-                [self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + ratio + self.o_time +
-                [self.dr_left_capacity] + [self.clock])
+                [self.dr_x] + [self.dr_y] + self.o_x + self.o_y + self.o_status + self.reward_per_order + self.o_time +
+                 distance + [self.dr_left_capacity] + [self.clock] )
 
     def valid_action_mask(self):
         avail_actions = np.array([0] * self.action_max)
