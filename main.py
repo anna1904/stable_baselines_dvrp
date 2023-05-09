@@ -105,6 +105,7 @@ from stable_baselines3 import PPO
 #sc_8_b_3 with normalization wit locations,ratio reward/time_left without simple rewards,  rs = 6, 128 128, n = 10, p = 25 PP018
 #sc_8_b_4 with normalization wit locations,ratio driver, ratio time,  rs = 6, 128 128, n = 10, p = 25 PP019
 #sc_8_b_4 with normalization wit locations,ratio driver, usual driver capacity, usual time,  rs = 6, 128 128, n = 10, p = 25 PP020, [self.dr_left_capacity/self.driver_capacity] + [self.dr_left_capacity] + [self.clock]
+#sc_8_b_4 with normalization wit locations,distances to order 1,2 order statuses,  rs = 6, 128 128, n = 10, p = 25 PP021
 
 
 #remove locations
