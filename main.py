@@ -106,6 +106,7 @@ from stable_baselines3 import PPO
 #sc_8_b_4 with normalization wit locations,ratio driver, ratio time,  rs = 6, 128 128, n = 10, p = 25 PP019
 #sc_8_b_4 with normalization wit locations,ratio driver, usual driver capacity, usual time,  rs = 6, 128 128, n = 10, p = 25 PP020, [self.dr_left_capacity/self.driver_capacity] + [self.dr_left_capacity] + [self.clock]
 #sc_8_b_4 with normalization wit locations,distances to order 1,2 order statuses,  rs = 6, 128 128, n = 10, p = 25 PP021
+#sc_8_b_5 with normalization wit locations,ratio capacity/queue_order,  rs = 6, 128 128, n = 10, p = 25 PP021
 
 
 #remove locations
@@ -141,8 +142,8 @@ model.learn(total_timesteps=110000000, log_interval=10, progress_bar=True) #
 
 
 log_dir = "./stats/"
-model.save(f"sc_8_b_4_{now.strftime('%m-%d_%H-%M')}")
-stats_path = os.path.join(log_dir, f"vec_normalize_sc_8_b_4_{now.strftime('%m-%d_%H-%M')}.pkl")
+model.save(f"sc_8_b_5_{now.strftime('%m-%d_%H-%M')}")
+stats_path = os.path.join(log_dir, f"vec_normalize_sc_8_b_5_{now.strftime('%m-%d_%H-%M')}.pkl")
 env.save(stats_path)
 
 #train more
@@ -162,7 +163,7 @@ env_my = DummyVecEnv([lambda: env_my])
 env_my = VecNormalize.load(stats_path, env_my)
 env_my.training = False
 env_my.norm_reward = False
-model = MaskablePPO.load(f"sc_8_b_4_{now.strftime('%m-%d_%H-%M')}", env = env)
+model = MaskablePPO.load(f"sc_8_b_5_{now.strftime('%m-%d_%H-%M')}", env = env)
 
 mean_reward, std_reward = evaluate_policy(model, env_my, n_eval_episodes=100)
 print(f"mean_reward={mean_reward:.2f} +/- {std_reward}")
