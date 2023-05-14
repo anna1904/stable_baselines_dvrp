@@ -110,6 +110,8 @@ from stable_baselines3 import PPO
 #sc_8_b_6 with normalization wit locations,combine ratio capacity/queue_order, one-hot-encoding, distances,  rs = 6, 128 128, n = 10, p = 25 PP023
 #sc_8_b_7 with normalization wit locations,combine ratio capacity/queue_order, one-hot-encoding, distances,  rs = 6, 128 128, n = 10, p = 25 PP023
 
+#sc__b_7 with normalization wit locations,combine ratio capacity/queue_order, one-hot-encoding, distances,  rs = 6, 128 128, n = 10, p = 25 PP023
+
 
 #remove locations
 #give 2 regions with large reward far away

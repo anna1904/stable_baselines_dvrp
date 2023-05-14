@@ -482,7 +482,7 @@ class DVRPEnv(gym.Env):
 
 
         return np.array(
-                [self.dr_x] + [self.dr_y] + self.o_x + self.o_y + statuses.flatten().tolist() + self.reward_per_order + self.o_time + distance +
+                [self.dr_x] + [self.dr_y] + self.o_x + self.o_y + statuses.flatten().tolist() + ratio + self.o_time + distance +
                    [ratio_capacity] + [self.clock] )
 
     def valid_action_mask(self):
