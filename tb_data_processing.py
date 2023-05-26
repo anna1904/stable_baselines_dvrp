@@ -12,8 +12,8 @@ def smooth_data(data, window_size):
     return smoothed_data
 
 # csv_path = ['csv_files/PPO_7.csv', 'csv_files/PPO_8.csv', 'csv_files/PPO_9.csv', 'csv_files/PPO_10.csv', 'csv_files/PPO_11.csv', 'csv_files/PPO_12.csv']
-csv_path = ['csv_files/PPO_24.csv', 'csv_files/PPO_25.csv', 'csv_files/PPO_26.csv']
-tags = ['4', '5', '6']
+csv_path = ['csv_files/PPO_28.csv', 'csv_files/PPO_24.csv', 'csv_files/PPO_25.csv', 'csv_files/PPO_26.csv']
+tags = ['2', '3', '4', '6']
 
 
 matplotlib.use('TkAgg')
